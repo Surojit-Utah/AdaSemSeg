@@ -1,0 +1,82 @@
+# Common hyperparameters shared across AdaSemSeg, baselines, ProtoSemSeg, and SimCLR.
+# Method-specific overrides can be provided on the command line or in method scripts.
+
+simclr:
+  arch: resnet50
+  epochs: 10
+  batch_size: 32
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  temperature: 0.07
+  patch_size: 256
+  n_views: 2
+  optimizer: Adam
+  scheduler: none
+  augmentations:
+    - name: RandomRotate
+      params: { degrees: [-20, 20] }
+    - name: RandomHorizontalFlip
+      params: { p: 0.5 }
+    - name: GaussianBlur
+      params: { sigma: [0.1, 2.0] }
+    - name: GaussNoise
+      params: { var: [1.0e-4, 5.0e-2] }
+    - name: RandomResizedCrop
+      params: { size: 256, scale: [0.5, 1.0] }
+    - name: Brightness
+      params: { brightness: [0.5, 1.5] }
+    - name: Contrast
+      params: { contrast: [0.0, 2.0] }
+  data:
+    total_patches: 35648
+    datasets: [F3, Penobscot, Parihaka]
+
+adasemseg:
+  epochs: 10
+  batch_size: 2  # per task; effective depends on number of classes
+  learning_rate: 0.00005
+  weight_decay: 0.001
+  optimizer: AdamW
+  scheduler:
+    name: ReduceLROnPlateau
+    mode: min
+    factor: 0.25
+    patience: 5
+  patch_size: 256
+  augmentations:
+    - name: RandomRotate
+      params: { degrees: [-20, 20] }
+    - name: RandomHorizontalFlip
+      params: { p: 0.5 }
+    - name: GaussianBlur
+      params: { sigma: [0.1, 2.0] }
+    - name: GaussNoise
+      params: { var: [1.0e-4, 5.0e-2] }
+  backbone: resnet50
+  loss: weighted_binary_cross_entropy
+  shots: [1, 5]
+
+baselines:
+  epochs: 20
+  batch_size: 10
+  val_batch_size: 40
+  learning_rate: 0.0001  # placeholder; verify against local_config usage
+  weight_decay: 0.0001
+  optimizer: AdamW
+  scheduler:
+    name: ReduceLROnPlateau
+    mode: min
+    factor: 0.25
+    patience: 5
+  patch_size: 256
+  backbone: resnet50
+
+protosemseg:
+  epochs: 20
+  batch_size: 2
+  val_batch_size: 8
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  optimizer: AdamW
+  patch_size: 256
+  backbone: resnet50

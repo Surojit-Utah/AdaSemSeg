@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.pytest_cache/
+
+# Logs and outputs
+logs/
+runs/
+*.log
+
+# Data and checkpoints
+# Model weights and datasets are tracked with Git LFS and shipped with this repo.
+# Only AdaSemSeg + SimCLR weights are included; ProtoSemSeg weights are excluded.
+!data/
+!checkpoints/
+checkpoints/protosemseg/
+Repo_checkpoints_excluded/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/

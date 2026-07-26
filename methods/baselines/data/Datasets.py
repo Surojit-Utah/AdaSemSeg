@@ -1,0 +1,556 @@
+import sys
+sys.path.append('..')
+from PIL import Image
+from data.transform import Compose, Normalize, Resize, ToTensor, RandomHorizontalFlip
+from data.transform import RandomRotate, GaussianBlur, GaussNoise, Scale
+from torch.utils.data import DataLoader, Dataset, RandomSampler
+import os
+import torch
+import numpy as np
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+plt.rcParams['image.cmap'] = 'gray'
+import random
+import copy
+from tqdm import tqdm
+import time
+import json
+from config.local_config import create_config
+
+
+class Seismic_Segmentation_Task():
+
+    def __init__(self, classes, data_info, patch_size, train_batch_size=10, val_batch_size=10, debug=False):
+
+        self.traindataset = CustomDataset(classes, data_info, patch_size, train_batch_size, mode='train', debug=debug)
+        self.train_batch_size = train_batch_size
+        train_per_class_sample_indices = self.traindataset.per_class_sample_indices
+        self.train_batch_sampler_obj = BatchSampler(train_per_class_sample_indices, batch_size=self.train_batch_size)
+        self.train_loader = DataLoader(self.traindataset, batch_sampler=self.train_batch_sampler_obj, num_workers=1)
+
+        self.validdataset = CustomDataset(classes, data_info, patch_size, val_batch_size, mode='val', debug=debug)
+        self.val_batch_size = val_batch_size
+        val_per_class_sample_indices = self.validdataset.per_class_sample_indices
+        self.val_batch_sampler_obj = BatchSampler(val_per_class_sample_indices, batch_size=self.val_batch_size)
+        self.val_loader = DataLoader(self.validdataset, batch_sampler=self.val_batch_sampler_obj, num_workers=1)
+
+
+class CustomDataset(Dataset):
+
+    def __init__(self, classes, data_info, patch_size, batch_size, mode=None, debug=False):
+
+        self.classes = classes
+        self.data_info = data_info
+        self.patch_size = patch_size
+        self.batch_size = batch_size
+        self.mode = mode
+        self.transform = None
+        self.debug = debug
+
+        self.data_vol = dict()
+        self.label_vol = dict()
+        self.class_labels = dict()
+        self.class_label_count = dict()
+        self.slice_indices = dict()
+        self.img_metadata = self.build_img_metadata()
+
+        keep_entries = (len(self.img_metadata)//self.batch_size)*self.batch_size
+        self.img_metadata = self.img_metadata[:keep_entries]
+
+        self.img_metadata_classwise, self.per_class_sample_indices = self.build_img_metadata_classwise()
+
+        self.aug_dict = {1: RandomRotate(p=0.5),
+                         2: RandomHorizontalFlip(p=0.5),
+                         3: GaussianBlur(p=0.5),
+                         4: GaussNoise(p=0.5)}
+
+        self.total_aug_count = len(self.aug_dict.keys())
+
+        # Debug messages
+        self.query_aug_str = None
+        self.query_train_aug = None
+        self.query_val_aug = None
+
+
+    def __len__(self):
+        return len(self.img_metadata)
+
+
+    def __getitem__(self, idx):
+
+        query_class, query_example = self.sample_episode(idx)
+
+        # Load the images and masks as PIL images
+        query_img, query_mask = self.load_frame(query_class, query_example)
+
+        # Apply the randomly selected augmentations on the query images
+        if self.mode == 'train':
+            if self.query_train_aug is None:
+                self.query_train_aug = "Random augmentation to be applied on the query image...."
+
+            query_aug_index = query_example[0][-1]
+            self.query_aug_str = query_aug_index
+            query_transform = Compose([self.aug_dict[query_aug_index],
+                                       Resize(self.patch_size),
+                                       ToTensor()
+                                       ])
+
+        # No augmentations on the validation data set
+        else:
+            if self.query_val_aug is None:
+                self.query_val_aug = "No augmentations to be applied on the query image...."
+
+            query_transform = Compose([Resize(self.patch_size),
+                                       ToTensor()
+                                       ])
+        query_img, query_mask = query_transform(query_img[0], query_mask[0])
+
+        if self.debug:
+            # Augmentations based on training or validation stage
+            if self.mode=='train':
+                print(self.query_train_aug)
+                print(self.query_aug_str)
+            else:
+                print(self.query_val_aug)
+                print(self.query_aug_str)
+
+            print("Shape of a query example in a minibatch")
+            print(query_class)
+            print(query_img.shape)
+            print(query_mask.shape)
+
+            self.debug = False
+
+        output = {'data_class': query_class, 'query_image': query_img, 'query_segmentation': query_mask}
+
+        return output
+
+
+    def get_data_stat(self, data_axis, train_slices, data_split_filepath):
+        data_split_fptr = open(data_split_filepath)
+        data_split_dict = json.load(data_split_fptr)
+
+        direction = 'inline' if data_axis==0 else 'xline'
+        ortho_direction = 'xline' if data_axis==0 else 'inline'
+        image_width_stat = None
+        if self.mode=='train':
+            # Get the slice indices
+            if train_slices=='all':
+                train_min_index_key_name = 'train_' + direction + '_min'
+                train_max_index_key_name = 'train_' + direction + '_max'
+                train_min_index = data_split_dict[train_min_index_key_name]
+                train_max_index = data_split_dict[train_max_index_key_name]
+                selected_indices = np.arange(train_min_index, train_max_index).tolist()
+            else:
+                train_key_name = 'train_' + direction + '_' + train_slices
+                selected_indices = data_split_dict[train_key_name]
+
+            # Get the valid width of the image
+            train_min_col_index_key_name = 'train_' + ortho_direction + '_min'
+            train_max_col_index_key_name = 'train_' + ortho_direction + '_max'
+            train_min_col_index = data_split_dict[train_min_col_index_key_name]
+            train_max_col_index = data_split_dict[train_max_col_index_key_name]
+            image_width_stat = [train_min_col_index, train_max_col_index]
+
+        elif self.mode=='val':
+            if direction=='inline':
+                # Get the slice indices
+                val_min_key_name = 'val_1_' + direction + '_min'
+                val_max_key_name = 'val_1_' + direction + '_max'
+                val_min_index = data_split_dict[val_min_key_name]
+                val_max_index = data_split_dict[val_max_key_name]
+                selected_indices = np.arange(val_min_index, val_max_index).tolist()
+
+                # Get the valid width of the image
+                val_min_col_index_key_name = 'val_1_' + ortho_direction + '_min'
+                val_max_col_index_key_name = 'val_1_' + ortho_direction + '_max'
+                val_min_col_index = data_split_dict[val_min_col_index_key_name]
+                val_max_col_index = data_split_dict[val_max_col_index_key_name]
+                image_width_stat = [val_min_col_index, val_max_col_index]
+
+            elif direction=='xline':
+                # Get the slice indices
+                val_min_key_name = 'val_2_' + direction + '_min'
+                val_max_key_name = 'val_2_' + direction + '_max'
+                val_min_index = data_split_dict[val_min_key_name]
+                val_max_index = data_split_dict[val_max_key_name]
+                selected_indices = np.arange(val_min_index, val_max_index).tolist()
+
+                # Get the valid width of the image
+                val_min_col_index_key_name = 'val_2_' + ortho_direction + '_min'
+                val_max_col_index_key_name = 'val_2_' + ortho_direction + '_max'
+                val_min_col_index = data_split_dict[val_min_col_index_key_name]
+                val_max_col_index = data_split_dict[val_max_col_index_key_name]
+                image_width_stat = [val_min_col_index, val_max_col_index]
+
+        return selected_indices, image_width_stat
+
+
+    def build_img_metadata(self):
+
+        img_metadata = []
+        existing_entry = 0
+        for class_name in self.classes:
+
+            datapath = self.data_info[class_name]['data_dir']
+            data_vol_name = self.data_info[class_name]['data_vol_name']
+            label_vol_name = self.data_info[class_name]['label_vol_name']
+            patch_overlap = self.data_info[class_name]['patch_overlap']
+            data_split_filepath = self.data_info[class_name]['train_val_test_split']
+            train_slices = self.data_info[class_name]['train_indices']
+            data_axis = self.data_info[class_name]['axis']
+
+            ##########################################################################
+            # Read the JSON file to get the following:
+            # 1. slices indices for the train and validation data
+            # 2. Start and end index along the column. Used to compute the image width
+            ##########################################################################
+            labeled_indices, image_col_indices = self.get_data_stat(data_axis, train_slices, data_split_filepath)
+            self.slice_indices[class_name] = labeled_indices
+
+            #####################################################################
+            # Load the data and label along with the selection mask (if provided)
+            #####################################################################
+            self.data_vol[class_name] = np.load(os.path.join(datapath, data_vol_name))
+            # Normalizing the input data
+            min_intensity, max_intensity = np.min(self.data_vol[class_name]), np.max(self.data_vol[class_name])
+            self.data_vol[class_name] = (((self.data_vol[class_name] - min_intensity) / (max_intensity - min_intensity)) * 255).astype(np.uint8)
+
+            # Class index starts at 1
+            # This ignores the class label *0* for the Penobscot data set
+            if 'penobscot' in class_name:
+                self.label_vol[class_name] = np.load(os.path.join(datapath, label_vol_name)).astype(np.int8) - 1
+            else:
+                self.label_vol[class_name] = np.load(os.path.join(datapath, label_vol_name)).astype(np.int8)
+
+            # Ignore the class index *-1* for the Penobscot data set
+            cur_class_labels = np.unique(self.label_vol[class_name])
+            self.class_labels[class_name] = (cur_class_labels[cur_class_labels >= 0]).tolist()
+            self.class_label_count[class_name] = len(self.class_labels[class_name])
+
+            ##########################################
+            # Valid row and column indices for a slice
+            ##########################################
+            # Row indices
+            # This is related to the height of the data volume (z-axis)
+            image_height = int(self.data_vol[class_name].shape[-1])
+            min_row_index = self.patch_size//2
+
+            # Applicable for the F3 dataset
+            # Where the height (255) is less than the patch size (256)
+            if image_height < self.patch_size:
+                max_row_index = min_row_index + 1
+                row_min_separation = 1 if patch_overlap != -1 else -1
+            else:
+                max_row_index = image_height - (self.patch_size//2)
+                row_min_separation = max(4, int(self.patch_size*patch_overlap)) if patch_overlap != -1 else -1
+
+            # Column indices
+            # Width of the images are bigger than the patch size for all the three data sets
+            image_width = image_col_indices[1] - image_col_indices[0]
+            min_col_index = self.patch_size//2
+            max_col_index = image_width - (self.patch_size//2)
+            col_min_separation = max(4, int(self.patch_size*patch_overlap)) if patch_overlap != -1 else -1
+
+            valid_row_indices = None
+            valid_col_indices = None
+            if row_min_separation != -1:
+                valid_row_indices = np.arange(min_row_index, max_row_index, row_min_separation).tolist()
+            if col_min_separation != 1:
+                valid_col_indices = np.arange(min_col_index, max_col_index, col_min_separation).tolist()
+
+            if self.mode=='train' and self.debug:
+                print("Processing class : " + str(class_name))
+                print("Image height                         : " + str(image_height))
+                print("Image width                          : " + str(image_width))
+                print("Patch size                           : " + str(self.patch_size))
+                print("Separation between patches (row)     : " + str(row_min_separation))
+                print("Separation between patches (col)     : " + str(col_min_separation))
+                if row_min_separation!= -1 and col_min_separation!= -1:
+                    print("Number of labeled indices    : " + str(len(labeled_indices)))
+                    print("Shape of the data volume     : " + str(self.data_vol[class_name].shape))
+                    print("Valid row indices            : " + str(valid_row_indices))
+                    print("Number of valid row indices  : " + str(len(valid_row_indices)))
+                    print("Valid col indices            : " + str(valid_col_indices))
+                    print("Number of valid col indices  : " + str(len(valid_col_indices))+"\n")
+
+            if self.mode in ['train', 'val']:
+                for image_index in tqdm(labeled_indices):
+                    if valid_row_indices is not None and valid_col_indices is not None:
+                        for row_index in valid_row_indices:
+                            for col_index in valid_col_indices:
+                                img_metadata.append([class_name, image_index, row_index, col_index])
+            else:
+                raise Exception('Undefined mode %s: ' % self.mode)
+
+            print('Total (%s) images for class %s are : %d' % (self.mode, class_name, len(img_metadata)-existing_entry))
+            existing_entry = len(img_metadata)
+
+        print('Total (%s) images are : %d' %(self.mode, len(img_metadata)))
+
+        return img_metadata
+
+
+    def build_img_metadata_classwise(self):
+        class_name_to_index = {}
+        img_metadata_classwise = {}
+        class_index = 0
+        for class_name in self.classes:
+            img_metadata_classwise[class_name] = []
+            class_name_to_index[class_name] = class_index
+            class_index += 1
+
+        per_class_sample_indices = [[] for _ in range(len(self.classes))]
+        for i, (class_name, image_index, row_index, col_index) in enumerate(self.img_metadata):
+            img_metadata_classwise[class_name].append([image_index, row_index, col_index])
+            per_class_sample_indices[class_name_to_index[class_name]].append(i)
+
+        print(f"Loaded (class_idx, num_samples): {[(c, len(lst)) for c, lst in img_metadata_classwise.items()]}")
+
+        return img_metadata_classwise, per_class_sample_indices
+
+
+    def sample_episode(self, idx):
+
+        query_example = []
+
+        # Sampled query image data
+        # The use of the selection mask is taken care in the meta data building process
+        patch_info_list = self.img_metadata[idx]
+        # get the class label
+        query_class = patch_info_list[0]
+        # get the image index, row and column index
+        patch_info_list = patch_info_list[1:]
+
+        # Add augmentation to the query image
+        if self.mode == 'train':
+            query_aug_index = random.choice(range(1, self.total_aug_count + 1))
+            patch_info_list.append(query_aug_index)
+        query_example.append(patch_info_list)
+
+        return query_class, query_example
+
+
+    def load_frame(self, query_class, query_example):
+
+        query_img, query_mask = self.read_data(query_class, query_example)
+
+        return query_img, query_mask
+
+
+    def read_data(self, data_class, img_info):
+        r"""Return segmentation mask in PIL Image"""
+
+        data_axis = self.data_info[data_class]['axis']
+        mask_list = []              # labels, applicable for both binary and multi-class data
+        image_list = []             # input images
+        for index in range(len(img_info)):
+            img_index = img_info[index][0]
+            row_index = img_info[index][1]
+            col_index = img_info[index][2]
+
+            ###############################################################
+            # Load input images based on the direction, inline or crossline
+            ###############################################################
+            if data_axis==0:
+                cur_img = copy.deepcopy(self.data_vol[data_class][img_index].T)
+            elif data_axis==1:
+                cur_img = copy.deepcopy(self.data_vol[data_class][:, img_index, :].T)
+
+            # F3 facies
+            if self.data_vol[data_class].shape[-1] < self.patch_size:
+                base_intensity = np.max(self.data_vol[data_class])/2
+                img_patch = np.ones((self.patch_size, self.patch_size)) * base_intensity
+                # Offset the start index by 1 to take care of close calls for volumes like facies
+                data_start_index = (self.patch_size - self.data_vol[data_class].shape[-1])//2 + 1
+                data_end_index = data_start_index + self.data_vol[data_class].shape[-1]
+                img_patch[data_start_index:data_end_index] = copy.deepcopy(cur_img[:, (col_index-self.patch_size//2):(col_index+self.patch_size//2)])
+            # Penobscot and Parihaka
+            else:
+                img_patch = copy.deepcopy(cur_img[(row_index-self.patch_size//2):(row_index+self.patch_size//2), (col_index-self.patch_size//2):(col_index+self.patch_size//2)])
+            pil_image = Image.fromarray(img_patch)
+            rgb_image = pil_image.convert("RGB")
+            image_list.append(rgb_image)
+
+            #############################################################################
+            # Load corresponding label images based on the direction, inline or crossline
+            #############################################################################
+            if data_axis==0:
+                label_data = copy.deepcopy(self.label_vol[data_class][img_index].T)
+            elif data_axis==1:
+                label_data = copy.deepcopy(self.label_vol[data_class][:, img_index, :].T)
+
+            # F3 facies
+            if self.data_vol[data_class].shape[-1] < self.patch_size:
+                label_patch = np.zeros((self.patch_size, self.patch_size))
+                # Offset the start index by 1 to take care of close calls for volumes like facies
+                data_start_index = (self.patch_size - self.data_vol[data_class].shape[-1]) // 2 + 1
+                data_end_index = data_start_index + self.data_vol[data_class].shape[-1]
+                label_patch[data_start_index:data_end_index] = copy.deepcopy(label_data[:, (col_index - self.patch_size // 2):(col_index + self.patch_size // 2)])
+            # Penobscot and Parihaka
+            else:
+                label_patch = copy.deepcopy(label_data[(row_index-self.patch_size//2):(row_index+self.patch_size//2), (col_index-self.patch_size//2):(col_index+self.patch_size//2)])
+
+            # The Penobscot dataset has an entry of -1 in the GT
+            # Thus, the PIL format is ignored for the labels
+            label_patch = np.expand_dims(label_patch, axis=0)
+            label_patch_tensor = torch.from_numpy(label_patch).type(torch.long)
+            mask_list.append(label_patch_tensor)
+
+        return image_list, mask_list
+
+
+'''
+https://stackoverflow.com/questions/74252067/efficiently-sample-batches-from-only-one-class-at-each-iteration-with-pytorch
+Baseline: https://stackoverflow.com/questions/66065272/customizing-the-batch-with-specific-elements
+
+Related stuff:
+https://discuss.pytorch.org/t/load-the-same-number-of-data-per-class/65198
+'''
+class BatchSampler:
+    def __init__(self, per_class_sample_indices, batch_size):
+        # classes is a list of lists where each sublist refers to a class and contains
+        # the sample ids that belond to this class
+        self.per_class_sample_indices = per_class_sample_indices
+        self.n_batches = sum([len(x) for x in per_class_sample_indices]) // batch_size
+        self.min_class_size = min([len(x) for x in per_class_sample_indices])
+        self.batch_size = batch_size
+        self.class_range = list(range(len(self.per_class_sample_indices)))
+        random.shuffle(self.class_range)
+
+    def __iter__(self):
+        for j in range(self.n_batches):
+            if j < len(self.class_range):
+                batch_class = self.class_range[j]
+            else:
+                batch_class = random.choice(self.class_range)
+            if self.batch_size <= len(self.per_class_sample_indices[batch_class]):
+                batch = np.random.choice(self.per_class_sample_indices[batch_class], self.batch_size, replace=False)
+            else:
+                batch = self.per_class_sample_indices[batch_class]
+            yield batch
+
+
+def revert_normalization(sample):
+    """
+    sample (Tensor): of size (nsamples,nchannels,height,width)
+    """
+    mean = [0.5]
+    std = [0.5]
+    mean_tensor = torch.Tensor(mean)
+    std_tensor = torch.Tensor(std)
+    non_normalized_sample = sample*std_tensor + mean_tensor
+    return non_normalized_sample
+
+
+def show_combined_images(input_images, anno_images, num_classes, save_img_path):
+
+    num_images = input_images.shape[0]
+    fig = plt.figure()
+    gs = fig.add_gridspec(2, num_images)
+    gs.update(wspace=0.05)
+
+    for img_index in range(num_images):
+
+        img = input_images[img_index, :, :, :]
+        anno_img = anno_images[img_index, :, :, :]
+
+        # Clipping the Range [0, 255]
+        img = (img * 255.0).astype(np.uint8)
+        img = np.clip(img, 0, 255)
+        anno_img = (anno_img * (255//num_classes)).astype(np.uint8)
+        anno_img = np.clip(anno_img, 0, 255)
+
+        ax = fig.add_subplot(gs[0, img_index])
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.set_aspect('equal')
+        plt.axis('off')
+        plt.imshow(img, vmin=0, vmax=255)
+
+        ax = fig.add_subplot(gs[1, img_index])
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.set_aspect('equal')
+        plt.axis('off')
+        plt.imshow(anno_img, vmin=0, vmax=255)
+
+    plt.savefig(save_img_path)
+    plt.close(plt.gcf())
+
+    return
+
+
+if __name__ == '__main__':
+
+    config = create_config()
+    classes = config['classes']
+    data_info = config['data_info']
+    set_debug = True
+
+    seismic_seg_data_loader = Seismic_Segmentation_Task(classes, data_info, patch_size=256, train_batch_size=10, val_batch_size=10, debug=set_debug)
+    train_loader = seismic_seg_data_loader.train_loader
+    val_loader = seismic_seg_data_loader.val_loader
+
+    print("Number of training examples     : " + str(len(seismic_seg_data_loader.traindataset)))
+    print("Number of validation examples   : " + str(len(seismic_seg_data_loader.validdataset)) + "\n")
+
+    print("Testing the training data loader....")
+    for i, data in enumerate(train_loader):
+        if i == 0:
+            _iter_path = os.path.join('Train', 'Iter_' + str(i + 1))
+            if not os.path.isdir(_iter_path):
+                os.makedirs(_iter_path, exist_ok=True)
+
+            if set_debug:
+                print("\nShape of the training minibatch....")
+                print(data['query_image'].cpu().detach().shape)
+                print(data['query_segmentation'].cpu().detach().shape)
+                input()
+
+            data_class = data['data_class'][0]
+            num_labels = seismic_seg_data_loader.traindataset.class_label_count[data_class]
+            query_images = data['query_image'].cpu().detach()
+            query_images_np = query_images.numpy().transpose(0, 2, 3, 1)
+            query_anno = data['query_segmentation'].cpu().detach()
+            query_anno_np = query_anno.numpy().transpose(0, 2, 3, 1)
+            print(np.min(query_anno_np))
+            print(np.max(query_anno_np))
+            print(num_labels)
+            input()
+            query_batch_path = os.path.join(_iter_path, 'Query_Batch_' + str(i + 1) + '.png')
+            show_combined_images(query_images_np, query_anno_np, num_labels, query_batch_path)
+
+        else:
+            print("Done with training data loader...." + "\n\n")
+            break
+
+    print("Testing the validation data loader....")
+    for i, data in enumerate(val_loader):
+        if i == 0:
+            _iter_path = os.path.join('Val', 'Iter_' + str(i + 1))
+            if not os.path.isdir(_iter_path):
+                os.makedirs(_iter_path, exist_ok=True)
+
+            if set_debug:
+                print("\nShape of the validation minibatch....")
+                print(data['query_image'].cpu().detach().shape)
+                print(data['query_segmentation'].cpu().detach().shape)
+
+            data_class = data['data_class'][0]
+            num_labels = seismic_seg_data_loader.validdataset.class_label_count[data_class]
+            query_images = data['query_image'].cpu().detach()
+            query_images_np = query_images.numpy().transpose(0, 2, 3, 1)
+            query_anno = data['query_segmentation'].cpu().detach()
+            query_anno_np = query_anno.numpy().transpose(0, 2, 3, 1)
+            print(np.min(query_anno_np))
+            print(np.max(query_anno_np))
+            print(num_labels)
+            input()
+            query_batch_path = os.path.join(_iter_path, 'Query_Batch_' + str(i + 1) + '.png')
+            show_combined_images(query_images_np, query_anno_np, num_labels, query_batch_path)
+
+        else:
+            print("Done with test data loader....")
+            break

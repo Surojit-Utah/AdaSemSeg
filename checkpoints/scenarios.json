@@ -1,0 +1,128 @@
+{
+  "description": "Default checkpoints for reproducing paper results. Paths are relative to the repository root.",
+  "adasemseg": {
+    "simclr": {
+      "1-shot_sampling": {
+        "f3": {
+          "checkpoint": "checkpoints/adasemseg/adasemseg_1shot_Run_3_f3_il_f3_xl_bestmodel.pth.tar",
+          "classes": [
+            "f3_facies_data_inline",
+            "f3_facies_data_crossline"
+          ],
+          "shots": 1,
+          "use_nearest_slice": false,
+          "paper_pa": 0.86,
+          "paper_fwiou": 0.79
+        },
+        "penobscot": {
+          "checkpoint": "checkpoints/adasemseg/adasemseg_1shot_Run_2_penobscot_il_penobscot_xl_bestmodel.pth.tar",
+          "classes": [
+            "penobscot_facies_data_inline",
+            "penobscot_facies_data_crossline"
+          ],
+          "shots": 1,
+          "use_nearest_slice": false,
+          "paper_pa": 0.92,
+          "paper_fwiou": 0.86
+        }
+      },
+      "5-shot_sampling": {
+        "f3": {
+          "checkpoint": "checkpoints/adasemseg/adasemseg_nearest_5shot_Run_3_4datasets_bestmodel.pth.tar",
+          "classes": [
+            "f3_facies_data_inline",
+            "f3_facies_data_crossline"
+          ],
+          "shots": 5,
+          "use_nearest_slice": false,
+          "paper_pa": 0.88,
+          "paper_fwiou": 0.81
+        },
+        "parihaka": {
+          "checkpoint": "checkpoints/adasemseg/adasemseg_5shot_Run_4_parihaka_il_parihaka_xl_bestmodel.pth.tar",
+          "classes": [
+            "parihaka_facies_data_inline",
+            "parihaka_facies_data_crossline"
+          ],
+          "shots": 5,
+          "use_nearest_slice": false,
+          "paper_pa": 0.75,
+          "paper_fwiou": 0.66
+        },
+        "penobscot": {
+          "checkpoint": "checkpoints/adasemseg/adasemseg_nearest_5shot_Run_2_4datasets_bestmodel.pth.tar",
+          "classes": [
+            "penobscot_facies_data_inline",
+            "penobscot_facies_data_crossline"
+          ],
+          "shots": 5,
+          "use_nearest_slice": false,
+          "paper_pa": 0.96,
+          "paper_fwiou": 0.92
+        }
+      },
+      "5-shot_nearest_slice": {
+        "parihaka": {
+          "checkpoint": "checkpoints/adasemseg/adasemseg_nearest_5shot_Run_1_parihaka_il_parihaka_xl_bestmodel.pth.tar",
+          "classes": [
+            "parihaka_facies_data_inline",
+            "parihaka_facies_data_crossline"
+          ],
+          "shots": 5,
+          "use_nearest_slice": true,
+          "paper_pa": 0.86,
+          "paper_fwiou": 0.76
+        },
+        "penobscot": {
+          "checkpoint": "checkpoints/adasemseg/adasemseg_nearest_5shot_Run_2_4datasets_bestmodel.pth.tar",
+          "classes": [
+            "penobscot_facies_data_inline"
+          ],
+          "shots": 5,
+          "use_nearest_slice": true,
+          "paper_pa": 0.96,
+          "paper_fwiou": 0.94
+        }
+      }
+    },
+    "random_init": {
+      "5-shot_sampling": {
+        "f3": {
+          "checkpoint": "checkpoints/adasemseg/adasemseg_random_init_5shot_Run_1_f3_il_f3_xl_bestmodel.pth.tar",
+          "classes": [
+            "f3_facies_data_inline",
+            "f3_facies_data_crossline"
+          ],
+          "shots": 5,
+          "use_nearest_slice": false,
+          "random_init": true,
+          "paper_pa": 0.89,
+          "paper_fwiou": 0.82
+        },
+        "parihaka": {
+          "checkpoint": "checkpoints/adasemseg/adasemseg_random_init_5shot_Run_2_parihaka_il_penobscot_il_penobscot_xl_bestmodel.pth.tar",
+          "classes": [
+            "parihaka_facies_data_inline"
+          ],
+          "shots": 5,
+          "use_nearest_slice": false,
+          "random_init": true,
+          "paper_pa": 0.84,
+          "paper_fwiou": 0.74
+        },
+        "penobscot": {
+          "checkpoint": "checkpoints/adasemseg/adasemseg_random_init_5shot_Run_2_parihaka_il_penobscot_il_penobscot_xl_bestmodel.pth.tar",
+          "classes": [
+            "penobscot_facies_data_inline",
+            "penobscot_facies_data_crossline"
+          ],
+          "shots": 5,
+          "use_nearest_slice": false,
+          "random_init": true,
+          "paper_pa": 0.98,
+          "paper_fwiou": 0.96
+        }
+      }
+    }
+  }
+}

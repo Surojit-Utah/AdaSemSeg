@@ -1,0 +1,10 @@
+Total (train) images are : 35664
+Loaded (class_idx, num_samples): [('penobscot_facies_data_inline', 4000), ('penobscot_facies_data_crossline', 4100), ('f3_facies_data_inline', 1564), ('f3_facies_data_crossline', 1382), ('parihaka_facies_data_inline', 12720), ('parihaka_facies_data_crossline', 11894)]
+Class weights in the train mode
+{'penobscot_facies_data_inline': 1.486, 'penobscot_facies_data_crossline': 1.45, 'f3_facies_data_inline': 3.8, 'f3_facies_data_crossline': 4.301, 'parihaka_facies_data_inline': 0.467, 'parihaka_facies_data_crossline': 0.5}
+
+
+Total (val) images are : 840
+Loaded (class_idx, num_samples): [('penobscot_facies_data_inline', 90), ('penobscot_facies_data_crossline', 90), ('f3_facies_data_inline', 40), ('f3_facies_data_crossline', 20), ('parihaka_facies_data_inline', 240), ('parihaka_facies_data_crossline', 360)]
+Class weights in the val mode
+{'penobscot_facies_data_inline': 1.556, 'penobscot_facies_data_crossline': 1.556, 'f3_facies_data_inline': 3.5, 'f3_facies_data_crossline': 7.0, 'parihaka_facies_data_inline': 0.583, 'parihaka_facies_data_crossline': 0.389}

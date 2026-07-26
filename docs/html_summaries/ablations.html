@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Ablation Studies Summary</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; line-height: 1.6; }
+    h1 { color: #2c3e50; }
+    h2 { color: #34495e; border-bottom: 1px solid #ccc; padding-bottom: 0.2em; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
+    th { background-color: #f2f2f2; }
+    code { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
+    pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    ul { margin-top: 0.5em; }
+  </style>
+</head>
+<body>
+
+<h1>Ablation Studies Reproducibility Summary</h1>
+
+<h2>Scope</h2>
+<ul>
+  <li>Paper: <code>C:\Users\suroj\Documents\Research\AdaSemSeg\Paper\bare_jrnl_new_sample4.tex</code></li>
+  <li>Code folders: <code>Random_init\</code>, <code>Contrastive_learning\</code></li>
+  <li>Main baseline reference: <code>AdaSemSeg\Main.py</code></li>
+</ul>
+
+<h2>Paper sections</h2>
+<ul>
+  <li><strong>Initialization ablation</strong> (§5.2.4): random image-encoder initialization vs SimCLR initialization.</li>
+  <li><strong>Data augmentation ablation</strong> (§5.2.5): RandomRotate, RandomHorizontalFlip, GaussianBlur, GaussNoise, None, All.</li>
+  <li><strong>Architecture ablation</strong> (§5.2.6): Baseline-2 as an encoder-decoder without mask encoder or GP regression.</li>
+  <li><strong>Class imbalance sensitivity</strong> (Appendix): per-class IoU and F1 analysis on under-represented classes.</li>
+</ul>
+
+<h2>Folder inventory</h2>
+<table>
+  <tr><th>Folder</th><th>Top-level contents</th></tr>
+  <tr><td><code>Random_init</code></td><td>config, data, Evaluation_nearest_slice, Evaluation_sampling, kernels, logs, models, Parihaka_Meta-testing, predict, qol, train, utils</td></tr>
+  <tr><td><code>Contrastive_learning</code></td><td>SimCLR, SimCLR_debug</td></tr>
+</table>
+
+<h2>Entry points</h2>
+<table>
+  <tr><th>Path</th><th>Role</th></tr>
+  <tr><td><code>Random_init\Main.py</code></td><td>AdaSemSeg training with randomly initialized image encoder.</td></tr>
+  <tr><td><code>Contrastive_learning\SimCLR_debug\run.py</code></td><td>SimCLR pretraining entry point; produces checkpoints used by AdaSemSeg.</td></tr>
+  <tr><td><code>AdaSemSeg\Main.py</code></td><td>Default AdaSemSeg; supports ImageNet init or SimCLR checkpoint init.</td></tr>
+</table>
+
+<h2>How the ablations differ</h2>
+<table>
+  <tr><th>Ablation</th><th>What changes</th><th>Code evidence</th></tr>
+  <tr>
+    <td>Random init vs SimCLR init</td>
+    <td><code>Random_init\Main.py</code> creates <code>resnet50(pretrained=False)</code>; <code>AdaSemSeg\Main.py</code> loads a SimCLR encoder checkpoint via <code>--img_enc_checkpoint</code>.</td>
+    <td><code>Random_init\Main.py</code> creates image encoder without pretrained weights; <code>AdaSemSeg\Main.py</code> prints “Loaded the SimCLR backbone....” after stripping projection-head weights.</td>
+  </tr>
+  <tr>
+    <td>Augmentation ablations</td>
+    <td>SimCLR data loader defines an augmentation set: RandomRotate, RandomHorizontalFlip, GaussianBlur, GaussNoise, RandomResizedCrop, Brightness, Contrast.</td>
+    <td><code>Contrastive_learning\SimCLR_debug\data\Datasets.py</code> has <code>aug_dict</code> with IDs 1–7.</td>
+  </tr>
+  <tr>
+    <td>Baseline-2 architecture</td>
+    <td>No mask encoder, no GP regression; regular encoder-decoder segmentation network.</td>
+    <td>Described in paper; default AdaSemSeg uses image encoder + mask encoder + GP + decoder.</td>
+  </tr>
+</table>
+
+<h2>Reproduction commands</h2>
+<pre>
+# 1) SimCLR pretraining (produces checkpoint for AdaSemSeg)
+python C:\Users\suroj\Documents\Research\AdaSemSeg\Contrastive_learning\SimCLR_debug\run.py ^
+  --run_id 1 --epochs 10 --batch-size 32 --arch resnet50
+
+# 2) AdaSemSeg with SimCLR init
+python C:\Users\suroj\Documents\Research\AdaSemSeg\AdaSemSeg\Main.py ^
+  --run_id 1 --shots 1 --train --img_enc_checkpoint PATH\TO\SimCLR_CHECKPOINT.pth.tar
+
+# 3) AdaSemSeg with random init
+python C:\Users\suroj\Documents\Research\AdaSemSeg\Random_init\Main.py ^
+  --run_id 1 --shots 1 --train
+</pre>
+
+<h2>Config notes</h2>
+<table>
+  <tr><th>Path</th><th>Important details</th></tr>
+  <tr><td><code>AdaSemSeg\config\local_config.py</code></td><td>Default classes include Parihaka inline/xline only; data paths point to local F3, Penobscot, Parihaka folders.</td></tr>
+  <tr><td><code>Random_init\config\local_config.py</code></td><td>Same catalog, defaults to Parihaka inline/xline for the random-init ablation.</td></tr>
+  <tr><td><code>Contrastive_learning\SimCLR_debug\config\local_config.py</code></td><td>Uses same data catalog for SimCLR pretraining.</td></tr>
+</table>
+
+<h2>Gaps / issues</h2>
+<ul>
+  <li>No dedicated, named script found for “Baseline-2”; it is described in the paper but appears to be represented by an alternate model path, not a standalone ablation runner.</li>
+  <li>Paper describes augmentation-only ablations, but no explicit CLI flag was found to select “None / All / single augmentation” modes.</li>
+  <li><code>Random_init</code> and <code>Contrastive_learning</code> configs contain hard-coded absolute Linux data paths, so reproduction on Windows requires path editing.</li>
+  <li>Some folders contain cached outputs/logs/checkpoints, but the code itself does not document exact experiment IDs for the paper tables.</li>
+</ul>
+
+<h2>Key references</h2>
+<ul>
+  <li><code>C:\Users\suroj\Documents\Research\AdaSemSeg\Paper\bare_jrnl_new_sample4.tex</code> — ablation subsections in §5.2.4–5.2.6.</li>
+  <li><code>C:\Users\suroj\Documents\Research\AdaSemSeg\Random_init\Main.py</code> — random-init training.</li>
+  <li><code>C:\Users\suroj\Documents\Research\AdaSemSeg\Contrastive_learning\SimCLR_debug\run.py</code> — SimCLR pretraining.</li>
+  <li><code>C:\Users\suroj\Documents\Research\AdaSemSeg\Contrastive_learning\SimCLR_debug\data\Datasets.py</code> — augmentation implementation.</li>
+  <li><code>C:\Users\suroj\Documents\Research\AdaSemSeg\AdaSemSeg\Main.py</code> — default AdaSemSeg + SimCLR loading.</li>
+</ul>
+
+</body>
+</html>

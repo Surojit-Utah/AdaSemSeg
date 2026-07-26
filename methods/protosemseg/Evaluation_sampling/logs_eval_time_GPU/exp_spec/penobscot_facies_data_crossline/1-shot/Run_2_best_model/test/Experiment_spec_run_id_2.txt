@@ -1,0 +1,8 @@
+Details about experiment run_id : 2
+Image encoder type              : resnet
+Source class                    : penobscot_facies_data_crossline
+Shots                           : 1
+
+Checkpoint used for loading all the model parameters.... 
+Checkpoint path                 : ../logs/checkpoints/1-shot/Run_2/bestmodel.pth.tar
+

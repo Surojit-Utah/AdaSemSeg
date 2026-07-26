@@ -1,0 +1,10 @@
+Pixel Acc: 0.53
+Class Accuracy: [0.42, 0.38, 0.01, 0.13, 0.68, 0.55, 0.56]
+Mean Class Acc: 0.39
+Frequency: [0.1, 0.12, 0.02, 0.03, 0.27, 0.15, 0.3]
+Mean IoU: 0.27
+Freq Weighted IoU: 0.37
+mean_f1_score: 0.39
+Freq Weighted F1 score: 0.53
+f1_score: [0.47 0.37 0.01 0.09 0.56 0.57 0.66]
+classwise_IoU: {0: 0.31, 1: 0.23, 2: 0.01, 3: 0.05, 4: 0.39, 5: 0.4, 6: 0.49}

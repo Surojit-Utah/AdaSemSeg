@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AdaSemSeg Reproducibility Gap Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; line-height: 1.6; }
+    h1 { color: #2c3e50; }
+    h2 { color: #34495e; border-bottom: 1px solid #ccc; padding-bottom: 0.2em; }
+    h3 { color: #34495e; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
+    th { background-color: #f2f2f2; }
+    code { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
+    ul { margin-top: 0.5em; }
+    .high { color: #c0392b; font-weight: bold; }
+    .medium { color: #d35400; font-weight: bold; }
+    .low { color: #27ae60; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<h1>AdaSemSeg Reproducibility Gap Report</h1>
+<p><strong>Generated:</strong> Cross-agent synthesis of paper inventory and per-method code summaries.</p>
+
+<h2>1. Component map</h2>
+<table>
+  <tr><th>Paper component</th><th>Local code folder</th><th>HTML summary</th><th>Status</th></tr>
+  <tr><td>AdaSemSeg (proposed method)</td><td><code>AdaSemSeg/</code></td><td><a href="adasemseg.html">adasemseg.html</a></td><td class="medium">Partial — missing eval branch</td></tr>
+  <tr><td>Baseline-1 (target-only AdaSemSeg)</td><td><code>Baseline/</code></td><td><a href="baselines.html">baselines.html</a></td><td class="medium">Partial</td></tr>
+  <tr><td>Baseline-2 (ResNet-UNet / UNet)</td><td><code>Baseline/</code></td><td><a href="baselines.html">baselines.html</a></td><td class="medium">Partial</td></tr>
+  <tr><td>Transfer learning</td><td><code>Baseline/Transfer_learning/</code></td><td><a href="baselines.html">baselines.html</a></td><td class="medium">Partial</td></tr>
+  <tr><td>ProtoSemSeg</td><td><code>Proto_FSS/</code></td><td><a href="protofss.html">protofss.html</a></td><td class="medium">Partial — interactive eval</td></tr>
+  <tr><td>SimCLR pretraining</td><td><code>pretraining/simclr/</code></td><td><a href="simclr.html">simclr.html</a></td><td class="medium">Partial — outdated deps</td></tr>
+  <tr><td>Random-init ablation</td><td><code>Random_init/</code></td><td><a href="ablations.html">ablations.html</a></td><td class="medium">Partial</td></tr>
+  <tr><td>Augmentation ablation</td><td><code>Contrastive_learning/</code></td><td><a href="ablations.html">ablations.html</a></td><td class="medium">Partial — no CLI flags</td></tr>
+  <tr><td>Architecture ablation</td><td><code>Baseline/</code></td><td><a href="baselines.html">baselines.html</a></td><td class="medium">Partial</td></tr>
+</table>
+
+<h2>2. Dependency graph</h2>
+<pre>
+SimCLR pretraining (pretraining/simclr/)
+    │
+    ├──► AdaSemSeg image encoder
+    ├──► Baseline-2 image encoder
+    └──► ProtoSemSeg image encoder
+
+AdaSemSeg
+    ├──► Random_init (ablation: same code, no SimCLR checkpoint)
+    └──► Augmentation ablations (same training code with different transforms)
+
+Baseline-2
+    ├──► Baseline-1 (same code path, target-only training)
+    └──► Transfer learning (same code path, source → target fine-tuning)
+
+ProtoSemSeg (independent prototype-based baseline)
+</pre>
+
+<h2>3. Common reproducibility gaps</h2>
+
+<h3 class="high">High priority</h3>
+<ul>
+  <li><strong>Hard-coded Linux paths:</strong> configs across all folders point to <code>/home/sci/surojit/Exxon_Research/Data/...</code>. Reproduction on Windows or other machines requires manual path editing.</li>
+  <li><strong>Missing evaluation scripts:</strong> AdaSemSeg <code>Main.py</code> has <code>--test</code> and <code>--test_num_support</code> arguments that are unused; <code>DGP_Evaluator</code> is referenced but not found.</li>
+  <li><strong>Interactive evaluation:</strong> Proto_FSS and Baseline evaluation scripts prompt for <code>source_class</code> via <code>input()</code>, which prevents batch/automated reproduction.</li>
+  <li><strong>Dataset splits not bundled:</strong> train/val/test JSON split files are referenced but not included in the repository.</li>
+</ul>
+
+<h3 class="medium">Medium priority</h3>
+<ul>
+  <li><strong>Outdated dependencies:</strong> SimCLR <code>env.yml</code>/<code>requirements.txt</code> specify PyTorch 1.4, Python 3.7, CUDA 10.1, and nvidia-apex.</li>
+  <li><strong>Fragile checkpoint loading:</strong> SimCLR checkpoint loading strips the last 4 projection-head parameters by index and removes a <code>backbone.</code> prefix; brittle to model changes.</li>
+  <li><strong>No unified top-level launcher:</strong> each method has its own <code>Main.py</code> with different argument conventions; no single script reproduces all paper tables.</li>
+  <li><strong>Augmentation ablations lack CLI flags:</strong> paper studies single-augmentation and no-augmentation modes, but no flag selects these modes.</li>
+  <li><strong>Baseline-2 not clearly demarcated:</strong> architecture ablation is described in the paper but implemented as alternate encoder choice, not a standalone runner.</li>
+</ul>
+
+<h3 class="low">Low priority</h3>
+<ul>
+  <li>README files are minimal or target natural-image datasets (SimCLR).</li>
+  <li>Log/checkpoint naming conventions vary across folders.</li>
+  <li>Some cached outputs/logs are present but not documented.</li>
+</ul>
+
+<h2>4. Recommended next steps</h2>
+<ol>
+  <li><strong>Unify data configuration:</strong> create a top-level <code>config/datasets.yaml</code> with relative paths and dataset splits; make all methods read from it.</li>
+  <li><strong>Implement missing evaluation paths:</strong> add test/eval modes to AdaSemSeg <code>Main.py</code> and provide <code>DGP_Evaluator</code>; remove interactive prompts from Proto_FSS/Baseline evaluation.</li>
+  <li><strong>Create reproduction scripts:</strong> one script per paper table/figure (e.g., <code>reproduce_table1.sh</code>, <code>reproduce_table2.sh</code>, etc.).</li>
+  <li><strong>Modernize dependencies:</strong> update <code>requirements.txt</code> and <code>environment.yml</code> to recent PyTorch/Python versions; remove obsolete nvidia-apex.</li>
+  <li><strong>Robust checkpoint loading:</strong> load SimCLR backbone by key matching instead of stripping fixed parameter counts.</li>
+  <li><strong>Documentation:</strong> expand README with architecture diagrams, method descriptions, result tables, and step-by-step reproduction instructions; copy relevant figures from <code>Paper/images/</code>.</li>
+  <li><strong>Bundle dataset splits:</strong> include train/val/test JSON files or a script to generate them from the raw public datasets.</li>
+</ol>
+
+<h2>5. Paper result → script mapping (target state)</h2>
+<table>
+  <tr><th>Paper item</th><th>Required scripts / commands</th></tr>
+  <tr><td>Table 1 (nearest-slice vs K-shot)</td><td>AdaSemSeg eval script with <code>--use_nearest_slice</code> and <code>--shots {1,5}</code></td></tr>
+  <tr><td>Table 2 (vs Baseline-1/2)</td><td>AdaSemSeg, Baseline-1, Baseline-2 train + eval scripts for each target dataset</td></tr>
+  <tr><td>Table 3 (vs ProtoSemSeg &amp; transfer learning)</td><td>ProtoSemSeg train + eval; transfer-learning train + eval</td></tr>
+  <tr><td>Table 5 (random vs SimCLR init)</td><td>Random_init train + eval; SimCLR pretrain → AdaSemSeg train + eval</td></tr>
+  <tr><td>Table 6 (augmentation ablation)</td><td>AdaSemSeg training with transform flags for each augmentation mode</td></tr>
+  <tr><td>Table 7 (inference time)</td><td>Timed evaluation runs on CPU and GPU for all methods</td></tr>
+  <tr><td>Table 8 (class imbalance)</td><td>Per-class IoU/F1 reporting in evaluation scripts</td></tr>
+  <tr><td>Figures 9–12 (predictions)</td><td>Evaluation visualization scripts saving prediction overlays</td></tr>
+</table>
+
+<h2>6. Source summaries</h2>
+<ul>
+  <li><a href="paper_inventory.html">paper_inventory.html</a> — full paper inventory and code map.</li>
+  <li><a href="adasemseg.html">adasemseg.html</a> — main AdaSemSeg method.</li>
+  <li><a href="baselines.html">baselines.html</a> — Baseline-1, Baseline-2, transfer learning.</li>
+  <li><a href="protofss.html">protofss.html</a> — ProtoSemSeg.</li>
+  <li><a href="simclr.html">simclr.html</a> — SimCLR pretraining.</li>
+  <li><a href="ablations.html">ablations.html</a> — ablation studies.</li>
+</ul>
+
+</body>
+</html>

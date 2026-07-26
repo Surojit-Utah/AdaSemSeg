@@ -1,0 +1,7 @@
+Details about experiment run_id : 1
+Image encoder type              : resnet
+Source class                    : parihaka_facies_data_crossline
+
+Checkpoint used for loading all the model parameters.... 
+Checkpoint path                 : ../logs/checkpoints/Run_1/bestmodel.pth.tar
+

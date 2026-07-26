@@ -1,0 +1,31 @@
+{
+  "paper_title": "AdaSemSeg: An Adaptive Few-shot Semantic Segmentation of Seismic Facies",
+  "paper_authors": "Surojit Saha and Ross Whitaker",
+  "github_repo": "https://github.com/Surojit-Utah/AdaSemSeg",
+  "datasets": [
+    "F3 Seismic Facies Dataset",
+    "Parihaka Seismic Facies Dataset",
+    "Penobscot Seismic Facies Dataset"
+  ],
+  "tasks": [
+    "Few-Shot Semantic Segmentation",
+    "Seismic Facies Interpretation"
+  ],
+  "methods": [
+    "AdaSemSeg",
+    "ProtoSemSeg",
+    "SimCLR",
+    "Transfer Learning",
+    "U-Net",
+    "ResNet-UNet"
+  ],
+  "metrics": [
+    "Pixel Accuracy",
+    "Mean Class Accuracy",
+    "IoU",
+    "Frequency-weighted IoU",
+    "F1 Score",
+    "Frequency-weighted F1 Score"
+  ],
+  "external_data": "https://ieee-dataport.org/documents/[placeholder]"
+}

@@ -1,0 +1,83 @@
+# Unified dataset configuration for AdaSemSeg reproducibility.
+# Set the environment variable ADASEMSEG_DATA_ROOT to the directory containing
+# the extracted datasets. If unset, the default below is used.
+#
+# Expected layout (matches the downloaded zip extraction):
+#   ADASEMSEG_DATA_ROOT/
+#   ├── F3/
+#   │   ├── train/
+#   │   │   ├── train_seismic.npy
+#   │   │   └── train_labels.npy
+#   │   ├── test/
+#   │   │   ├── test1_seismic.npy
+#   │   │   ├── test1_labels.npy
+#   │   │   ├── test2_seismic.npy
+#   │   │   └── test2_labels.npy
+#   │   └── split_train_val_test_f3.json
+#   ├── Parihaka/
+#   │   ├── parihaka_facies_train_images.npy
+#   │   ├── parihaka_facies_train_labels.npy
+#   │   └── split_train_val_test_parihaka.json
+#   └── Penobscot/
+#       ├── seismic.npy
+#       ├── seismic_labels.npy
+#       └── split_train_val_test_penobscot.json
+
+data_root: "${ADASEMSEG_DATA_ROOT:-./data}"
+
+f3:
+  name: "F3"
+  inline:
+    data_dir: "F3/train"
+    data_vol_name: "train_seismic.npy"
+    label_vol_name: "train_labels.npy"
+    patch_overlap: 0.5
+    axis: 0
+    train_val_test_split: "F3/split_train_val_test_f3.json"
+    train_indices: "all"
+  crossline:
+    data_dir: "F3/train"
+    data_vol_name: "train_seismic.npy"
+    label_vol_name: "train_labels.npy"
+    patch_overlap: 0.5
+    axis: 1
+    train_val_test_split: "F3/split_train_val_test_f3.json"
+    train_indices: "all"
+
+parihaka:
+  name: "Parihaka"
+  inline:
+    data_dir: "Parihaka"
+    data_vol_name: "parihaka_facies_train_images.npy"
+    label_vol_name: "parihaka_facies_train_labels.npy"
+    patch_overlap: 0.5
+    axis: 0
+    train_val_test_split: "Parihaka/split_train_val_test_parihaka.json"
+    train_indices: "all"
+  crossline:
+    data_dir: "Parihaka"
+    data_vol_name: "parihaka_facies_train_images.npy"
+    label_vol_name: "parihaka_facies_train_labels.npy"
+    patch_overlap: 0.5
+    axis: 1
+    train_val_test_split: "Parihaka/split_train_val_test_parihaka.json"
+    train_indices: "all"
+
+penobscot:
+  name: "Penobscot"
+  inline:
+    data_dir: "Penobscot"
+    data_vol_name: "seismic.npy"
+    label_vol_name: "seismic_labels.npy"
+    patch_overlap: 0.5
+    axis: 0
+    train_val_test_split: "Penobscot/split_train_val_test_penobscot.json"
+    train_indices: "all"
+  crossline:
+    data_dir: "Penobscot"
+    data_vol_name: "seismic.npy"
+    label_vol_name: "seismic_labels.npy"
+    patch_overlap: 0.5
+    axis: 1
+    train_val_test_split: "Penobscot/split_train_val_test_penobscot.json"
+    train_indices: "all"

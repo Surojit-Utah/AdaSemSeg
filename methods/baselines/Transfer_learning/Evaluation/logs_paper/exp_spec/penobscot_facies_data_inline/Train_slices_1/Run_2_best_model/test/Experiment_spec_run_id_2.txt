@@ -1,0 +1,8 @@
+Details about experiment run_id : 2
+Image encoder type              : resnet
+Source class                    : penobscot_facies_data_inline
+Number of training slices       : 1
+
+Checkpoint used for loading all the model parameters.... 
+Checkpoint path                 : ../logs/checkpoints/Train_slices_1/Run_2/bestmodel.pth.tar
+
