@@ -1,21 +1,22 @@
 {
   "description": "Index of trained weights shipped with this repository. See checkpoints/scenarios.json for the scenario map.",
   "simclr": [
-    "checkpoints/simclr/simclr_resnet50_run2_epoch10.pth.tar"
+    "checkpoints/simclr/simclr_resnet50_epoch10.pth.tar"
   ],
   "adasemseg": [
-    "checkpoints/adasemseg/adasemseg_1shot_Run_2_penobscot_il_penobscot_xl_bestmodel.pth.tar",
-    "checkpoints/adasemseg/adasemseg_1shot_Run_3_f3_il_f3_xl_bestmodel.pth.tar",
-    "checkpoints/adasemseg/adasemseg_5shot_Run_4_parihaka_il_parihaka_xl_bestmodel.pth.tar",
-    "checkpoints/adasemseg/adasemseg_5shot_Run_5_parihaka_il_parihaka_xl_bestmodel.pth.tar",
-    "checkpoints/adasemseg/adasemseg_5shot_Run_6_parihaka_il_parihaka_xl_bestmodel.pth.tar",
-    "checkpoints/adasemseg/adasemseg_nearest_5shot_Run_1_parihaka_il_parihaka_xl_bestmodel.pth.tar",
-    "checkpoints/adasemseg/adasemseg_nearest_5shot_Run_2_4datasets_bestmodel.pth.tar",
-    "checkpoints/adasemseg/adasemseg_nearest_5shot_Run_3_4datasets_bestmodel.pth.tar",
-    "checkpoints/adasemseg/adasemseg_nearest_5shot_Run_7_parihaka_il_parihaka_xl_bestmodel.pth.tar",
-    "checkpoints/adasemseg/adasemseg_nearest_5shot_Run_8_parihaka_il_parihaka_xl_bestmodel.pth.tar",
-    "checkpoints/adasemseg/adasemseg_nearest_5shot_Run_9_parihaka_il_parihaka_xl_bestmodel.pth.tar",
-    "checkpoints/adasemseg/adasemseg_random_init_5shot_Run_1_f3_il_f3_xl_bestmodel.pth.tar",
-    "checkpoints/adasemseg/adasemseg_random_init_5shot_Run_2_parihaka_il_penobscot_il_penobscot_xl_bestmodel.pth.tar"
+    "checkpoints/adasemseg/f3/1-shot/bestmodel.pth.tar",
+    "checkpoints/adasemseg/f3/5-shot/bestmodel.pth.tar",
+    "checkpoints/adasemseg/parihaka/1-shot/bestmodel.pth.tar",
+    "checkpoints/adasemseg/parihaka/5-shot/bestmodel.pth.tar",
+    "checkpoints/adasemseg/penobscot/1-shot/bestmodel.pth.tar",
+    "checkpoints/adasemseg/penobscot/5-shot/bestmodel.pth.tar"
+  ],
+  "protosemseg": [
+    "checkpoints/protosemseg/f3/1-shot/bestmodel.pth.tar",
+    "checkpoints/protosemseg/f3/5-shot/bestmodel.pth.tar",
+    "checkpoints/protosemseg/parihaka/1-shot/bestmodel.pth.tar",
+    "checkpoints/protosemseg/parihaka/5-shot/bestmodel.pth.tar",
+    "checkpoints/protosemseg/penobscot/1-shot/bestmodel.pth.tar",
+    "checkpoints/protosemseg/penobscot/5-shot/bestmodel.pth.tar"
   ]
 }

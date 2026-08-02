@@ -5,8 +5,11 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-1.12+-ee4c2c.svg)](https://pytorch.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![arXiv](https://img.shields.io/badge/arXiv-2501.16760-b31b1b.svg)](https://arxiv.org/abs/2501.16760)
+[![Weights DOI](https://zenodo.org/badge/doi/10.5281%2Fzenodo.21762769.svg)](https://doi.org/10.5281/zenodo.21762769)
+[![Datasets DOI](https://zenodo.org/badge/doi/10.5281%2Fzenodo.21764042.svg)](https://doi.org/10.5281/zenodo.21764042)
 
-Official reproducibility repository for the paper *AdaSemSeg: An Adaptive Few-shot Semantic Segmentation of Seismic Facies* by [Surojit Saha](mailto:surojit.saha@utah.edu) and [Ross Whitaker](mailto:rosstwhitaker@gmail.com), *IEEE Transactions on Geoscience and Remote Sensing*, 2025.
+Official reproducibility repository for the paper *AdaSemSeg: An Adaptive Few-shot Semantic Segmentation of Seismic Facies* by [Surojit Saha](mailto:surojit.saha@utah.edu) and [Ross Whitaker](mailto:rosstwhitaker@gmail.com), *IEEE Transactions on Geoscience and Remote Sensing*, 2025 ([arXiv:2501.16760](https://arxiv.org/abs/2501.16760)).
 
 This repository provides a **complete, working implementation** of AdaSemSeg together with all baselines, competing methods, ablation studies, trained model weights, and reproduction scripts needed to reproduce the quantitative and qualitative results reported in the paper.
 
@@ -59,7 +62,7 @@ At inference time, only a few annotated support slices from the target volume ar
 - `pretraining/simclr/` — Self-supervised SimCLR pretraining for the image encoder
 - `configs/` — Unified `datasets.yaml` and shared hyperparameters
 - `scripts/` — One-command evaluation and reproduction wrappers
-- `checkpoints/` — AdaSemSeg best-model weights + SimCLR initialization checkpoint
+- `checkpoints/` — AdaSemSeg, ProtoSemSeg, and SimCLR initialization weights (downloaded from Zenodo, see [Model weights](#model-weights))
 - `docs/` — Paper figures, method descriptions, HTML summaries, and `running.md`
 - `REPRODUCE.md` — Step-by-step reproduction of every table/figure in the paper
 
@@ -76,16 +79,22 @@ pip install -r requirements.txt
 
 ## Download datasets and weights
 
-Datasets and trained weights are hosted externally via **IEEE DataPort** (URL will be added after upload). After the URL is configured, run:
+This repository ships **code only** — no large binaries are committed to git, so cloning it stays fast. Datasets and trained weights are hosted externally on Zenodo and pulled in on demand:
+
+- **Datasets** (F3, Parihaka, Penobscot volumes) — [10.5281/zenodo.21764042](https://zenodo.org/records/21764042)
+- **Model weights** (AdaSemSeg, ProtoSemSeg, SimCLR init) — [10.5281/zenodo.21762769](https://zenodo.org/records/21762769)
+
+Run:
 
 ```bash
 python scripts/download_assets.py --all
 ```
 
-Model weights already shipped in the repository are tracked with **Git LFS**. After cloning, pull them with:
+This populates `./data` and `./checkpoints` in place. To fetch only one or the other:
 
 ```bash
-git lfs pull
+python scripts/download_assets.py --data      # datasets only
+python scripts/download_assets.py --weights   # checkpoints only
 ```
 
 By default the code looks for data under `./data`:
@@ -105,6 +114,8 @@ data/
     ├── seismic_labels.npy
     └── split_train_val_test_penobscot.json
 ```
+
+`seismic.npy`/`seismic_labels.npy` for Penobscot are derived from a raw source volume (`dataset.h5`, not redistributed here) via [`data/Penobscot/process_data.py`](data/Penobscot/process_data.py), included so the exact preprocessing — and the source dataset it starts from — is transparent and reproducible.
 
 To use a different location, set:
 
@@ -222,24 +233,76 @@ Detailed commands, dataset splits, and expected outputs are documented in [`REPR
 
 ## Model weights
 
-Selected best-model checkpoints for AdaSemSeg and the SimCLR pretraining weight are included in this repository via Git LFS:
+> We extract 2D patches of size 256 × 256 along the inline and crossline directions to train the AdaSemSeg and other methods studied in this work for all the data volumes. [...] We use the *leave-one-out* policy to create the data for the meta-training and meta-testing. For example, to evaluate the AdaSemSeg on the Parihaka dataset (target data used in the meta-testing stage), we train the AdaSemSeg on the Penobscot and F3 dataset (source data used in the meta-training stage). Similarly, the AdaSemSeg is evaluated on the Penobscot and F3 datasets when the model is trained on the remaining two datasets. Under this experimental setting, we assess the generalization of the AdaSemSeg to unseen target datasets.
+>
+> — Section III-A, *Experimental Setup*
 
-- `checkpoints/adasemseg/` — Best AdaSemSeg checkpoints for the main paper scenarios
-- `checkpoints/simclr/` — SimCLR ResNet50 checkpoint used to initialize the image encoder
+Because of this leave-one-out design, there is one trained model **per target dataset per shot count**, for both AdaSemSeg and ProtoSemSeg. Checkpoints are downloaded from Zenodo (see [Download datasets and weights](#download-datasets-and-weights)) into a matching `<method>/<dataset>/<shots>-shot/` layout:
+
+```
+checkpoints/
+├── simclr/
+│   └── simclr_resnet50_epoch10.pth.tar   # shared image-encoder init, not per-dataset
+├── adasemseg/
+│   ├── f3/
+│   │   ├── 1-shot/bestmodel.pth.tar
+│   │   └── 5-shot/bestmodel.pth.tar
+│   ├── parihaka/
+│   │   ├── 1-shot/bestmodel.pth.tar
+│   │   └── 5-shot/bestmodel.pth.tar
+│   └── penobscot/
+│       ├── 1-shot/bestmodel.pth.tar
+│       └── 5-shot/bestmodel.pth.tar
+└── protosemseg/
+    ├── f3/
+    │   ├── 1-shot/bestmodel.pth.tar
+    │   └── 5-shot/bestmodel.pth.tar
+    ├── parihaka/
+    │   ├── 1-shot/bestmodel.pth.tar
+    │   └── 5-shot/bestmodel.pth.tar
+    └── penobscot/
+        ├── 1-shot/bestmodel.pth.tar
+        └── 5-shot/bestmodel.pth.tar
+```
+
+Each 5-shot checkpoint above is evaluated under both AdaSemSeg support-selection strategies (K=5 sampling and nearest-slice) to produce the two rows per dataset in Table 1 — support strategy is an evaluation-time flag, not a separate trained model.
+
 - `checkpoints/scenarios.json` — Maps each paper scenario to its checkpoint, shot count, support strategy, and classes
-
-ProtoSemSeg checkpoints and intermediate training checkpoints are not included in this repository push; they will be made available via IEEE DataPort.
+- `checkpoints/checkpoints_index.json` — Flat index of every checkpoint downloaded from Zenodo
 
 ## Citation
 
-If you use this code, data, or trained weights, please cite:
+If you use this code, please cite the paper:
 
 ```bibtex
 @article{saha2025adasemseg,
   title={AdaSemSeg: An Adaptive Few-shot Semantic Segmentation of Seismic Facies},
   author={Saha, Surojit and Whitaker, Ross},
   journal={IEEE Transactions on Geoscience and Remote Sensing},
-  year={2025}
+  year={2025},
+  doi={10.1109/TGRS.2025.3595010}
+}
+```
+
+If you use the trained model weights or the processed datasets, please also cite the corresponding Zenodo record:
+
+```bibtex
+@dataset{saha2026adasemsegweights,
+  title={AdaSemSeg: Trained Model Checkpoints for Adaptive Few-Shot Semantic Segmentation of Seismic Facies},
+  author={Saha, Surojit and Whitaker, Ross},
+  year={2026},
+  publisher={Zenodo},
+  doi={10.5281/zenodo.21762769},
+  url={https://doi.org/10.5281/zenodo.21762769}
+}
+
+@dataset{saha2026adasemsegdata,
+  title={AdaSemSeg: Processed Seismic Facies Datasets (F3, Parihaka, Penobscot)},
+  author={Saha, Surojit and Whitaker, Ross},
+  year={2026},
+  publisher={Zenodo},
+  doi={10.5281/zenodo.21764042},
+  url={https://doi.org/10.5281/zenodo.21764042}
 }
 ```
 

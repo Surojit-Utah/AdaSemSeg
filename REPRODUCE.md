@@ -56,7 +56,7 @@ Support-set sizes (1, 5, 10, 20, 50) are specified inside each split JSON (e.g. 
 
 ## 1. SimCLR pretraining (image-encoder initialization)
 
-The SimCLR checkpoint used in all downstream evaluations is already provided in `checkpoints/simclr/simclr_resnet50_run2_epoch10.pth.tar`.
+The SimCLR checkpoint used in all downstream evaluations is downloaded from Zenodo in step 0 above (`python scripts/download_assets.py --weights`) into `checkpoints/simclr/simclr_resnet50_epoch10.pth.tar`.
 
 To retrain from scratch, see [`docs/running.md`](docs/running.md#simclr-pretraining-image-encoder-initialization).
 
@@ -97,7 +97,7 @@ The script writes metrics to `./evaluation_results/metrics.json` (both averaged
 across target datasets and per-dataset).
 
 ### ProtoSemSeg
-ProtoSemSeg evaluation code is included, but its trained checkpoints are not shipped in this repository push (they will be available via IEEE DataPort). To evaluate ProtoSemSeg, provide `--checkpoint_dir` directly:
+ProtoSemSeg evaluation code is included; its trained checkpoints are downloaded from Zenodo into `checkpoints/protosemseg/<dataset>/<shots>-shot/` (see the README's "Model weights" section). To evaluate ProtoSemSeg, provide `--checkpoint_dir` directly:
 
 ```bash
 python scripts/evaluate_protosemseg.py \
@@ -145,7 +145,7 @@ See `scripts/metrics.py` for implementations.
 
 ## 6. Notes
 
-- All SimCLR-init experiments use the same checkpoint: `checkpoints/simclr/simclr_resnet50_run2_epoch10.pth.tar`.
+- All SimCLR-init experiments use the same checkpoint: `checkpoints/simclr/simclr_resnet50_epoch10.pth.tar`.
 - Dataset selection is controlled via the `--classes` flag or each method's `config/local_config.py`. The central `configs/datasets.yaml` is also used by the unified evaluation scripts.
 - Unified evaluation wrappers are `scripts/evaluate_adasemseg.py` and `scripts/evaluate_protosemseg.py`; the corresponding scenario-to-checkpoint map lives in `checkpoints/scenarios.json`.
-- Because model weights are large (~300 MB each), they are tracked with Git LFS. Install Git LFS and run `git lfs pull` after cloning.
+- Model weights are large (~300 MB each) and are **not** committed to this repository. Download them from Zenodo with `python scripts/download_assets.py --weights` (see the README's "Download datasets and weights" section).

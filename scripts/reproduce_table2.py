@@ -44,7 +44,7 @@ def main():
         "penobscot": ["penobscot_facies_data_inline", "penobscot_facies_data_crossline"],
     }
 
-    simclr_ckpt = os.path.join(REPO_ROOT, "checkpoints", "simclr", "simclr_resnet50_run2_epoch10.pth.tar")
+    simclr_ckpt = os.path.join(REPO_ROOT, "checkpoints", "simclr", "simclr_resnet50_epoch10.pth.tar")
     adasemseg_dir = os.path.join(REPO_ROOT, "methods", "adasemseg")
     baseline_dir = os.path.join(REPO_ROOT, "methods", "baselines")
 

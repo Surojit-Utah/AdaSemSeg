@@ -1,7 +1,16 @@
 {
+  "_readme": "Staging reference for manually submitting this paper/repo to Hugging Face Papers (paperswithcode.com now redirects there entirely -- checked 2026-08-02, both the PWC homepage and paper-specific URLs 302 to huggingface.co/papers). Paper is NOT yet listed there (checked https://huggingface.co/papers/2501.16760 -> 404) despite having a real arXiv ID, so it must be added by hand via a logged-in HF account at huggingface.co/papers/submit, then the code repo and results linked from the paper's HF page. This file is not an auto-ingested manifest; it exists so that submission can be filled in by copy-pasting from here.",
   "paper_title": "AdaSemSeg: An Adaptive Few-shot Semantic Segmentation of Seismic Facies",
   "paper_authors": "Surojit Saha and Ross Whitaker",
+  "paper_venue": "IEEE Transactions on Geoscience and Remote Sensing",
+  "paper_year": 2025,
+  "paper_doi": "10.1109/TGRS.2025.3595010",
+  "paper_url": "https://doi.org/10.1109/TGRS.2025.3595010",
+  "arxiv_id": "2501.16760",
+  "arxiv_url": "https://arxiv.org/abs/2501.16760",
   "github_repo": "https://github.com/Surojit-Utah/AdaSemSeg",
+  "license": "MIT (code), CC-BY-4.0 (data and weights)",
+  "framework": "PyTorch",
   "datasets": [
     "F3 Seismic Facies Dataset",
     "Parihaka Seismic Facies Dataset",
@@ -27,5 +36,34 @@
     "F1 Score",
     "Frequency-weighted F1 Score"
   ],
-  "external_data": "https://ieee-dataport.org/documents/[placeholder]"
+  "external_data": "https://zenodo.org/records/21764042",
+  "external_data_doi": "10.5281/zenodo.21764042",
+  "external_weights": "https://zenodo.org/records/21762769",
+  "external_weights_doi": "10.5281/zenodo.21762769",
+  "results": [
+    {"dataset": "F3 (inline)", "method": "AdaSemSeg", "metric": "Pixel Accuracy", "value": 0.89, "shots": 5, "support": "K=5 sampling"},
+    {"dataset": "F3 (inline)", "method": "AdaSemSeg", "metric": "Mean Class Accuracy", "value": 0.79, "shots": 5, "support": "K=5 sampling"},
+    {"dataset": "F3 (inline)", "method": "AdaSemSeg", "metric": "Frequency-weighted IoU", "value": 0.81, "shots": 5, "support": "K=5 sampling"},
+    {"dataset": "F3 (inline)", "method": "AdaSemSeg", "metric": "Frequency-weighted F1 Score", "value": 0.89, "shots": 5, "support": "K=5 sampling"},
+    {"dataset": "F3 (crossline)", "method": "AdaSemSeg", "metric": "Pixel Accuracy", "value": 0.87, "shots": 5, "support": "K=5 sampling"},
+    {"dataset": "F3 (crossline)", "method": "AdaSemSeg", "metric": "Mean Class Accuracy", "value": 0.73, "shots": 5, "support": "K=5 sampling"},
+    {"dataset": "F3 (crossline)", "method": "AdaSemSeg", "metric": "Frequency-weighted IoU", "value": 0.80, "shots": 5, "support": "K=5 sampling"},
+    {"dataset": "F3 (crossline)", "method": "AdaSemSeg", "metric": "Frequency-weighted F1 Score", "value": 0.88, "shots": 5, "support": "K=5 sampling"},
+    {"dataset": "Penobscot (inline)", "method": "AdaSemSeg", "metric": "Pixel Accuracy", "value": 0.96, "shots": 5, "support": "nearest-slice"},
+    {"dataset": "Penobscot (inline)", "method": "AdaSemSeg", "metric": "Mean Class Accuracy", "value": 0.95, "shots": 5, "support": "nearest-slice"},
+    {"dataset": "Penobscot (inline)", "method": "AdaSemSeg", "metric": "Frequency-weighted IoU", "value": 0.94, "shots": 5, "support": "nearest-slice"},
+    {"dataset": "Penobscot (inline)", "method": "AdaSemSeg", "metric": "Frequency-weighted F1 Score", "value": 0.97, "shots": 5, "support": "nearest-slice"},
+    {"dataset": "Penobscot (crossline)", "method": "AdaSemSeg", "metric": "Pixel Accuracy", "value": 0.97, "shots": 5, "support": "K=5 sampling"},
+    {"dataset": "Penobscot (crossline)", "method": "AdaSemSeg", "metric": "Mean Class Accuracy", "value": 0.95, "shots": 5, "support": "K=5 sampling"},
+    {"dataset": "Penobscot (crossline)", "method": "AdaSemSeg", "metric": "Frequency-weighted IoU", "value": 0.93, "shots": 5, "support": "K=5 sampling"},
+    {"dataset": "Penobscot (crossline)", "method": "AdaSemSeg", "metric": "Frequency-weighted F1 Score", "value": 0.96, "shots": 5, "support": "K=5 sampling"},
+    {"dataset": "Parihaka (inline)", "method": "AdaSemSeg", "metric": "Pixel Accuracy", "value": 0.86, "shots": 5, "support": "nearest-slice"},
+    {"dataset": "Parihaka (inline)", "method": "AdaSemSeg", "metric": "Mean Class Accuracy", "value": 0.76, "shots": 5, "support": "nearest-slice"},
+    {"dataset": "Parihaka (inline)", "method": "AdaSemSeg", "metric": "Frequency-weighted IoU", "value": 0.76, "shots": 5, "support": "nearest-slice"},
+    {"dataset": "Parihaka (inline)", "method": "AdaSemSeg", "metric": "Frequency-weighted F1 Score", "value": 0.86, "shots": 5, "support": "nearest-slice"},
+    {"dataset": "Parihaka (crossline)", "method": "AdaSemSeg", "metric": "Pixel Accuracy", "value": 0.84, "shots": 5, "support": "nearest-slice"},
+    {"dataset": "Parihaka (crossline)", "method": "AdaSemSeg", "metric": "Mean Class Accuracy", "value": 0.68, "shots": 5, "support": "nearest-slice"},
+    {"dataset": "Parihaka (crossline)", "method": "AdaSemSeg", "metric": "Frequency-weighted IoU", "value": 0.74, "shots": 5, "support": "nearest-slice"},
+    {"dataset": "Parihaka (crossline)", "method": "AdaSemSeg", "metric": "Frequency-weighted F1 Score", "value": 0.85, "shots": 5, "support": "nearest-slice"}
+  ]
 }

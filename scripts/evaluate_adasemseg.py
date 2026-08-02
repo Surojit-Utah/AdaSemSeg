@@ -64,7 +64,7 @@ def main():
     parser.add_argument("--scenario", default=None,
                         help="Scenario key from checkpoints/scenarios.json, e.g. simclr_5-shot_sampling_f3")
     parser.add_argument("--img_enc_checkpoint",
-                        default=os.path.join("checkpoints", "simclr", "simclr_resnet50_run2_epoch10.pth.tar"),
+                        default=os.path.join("checkpoints", "simclr", "simclr_resnet50_epoch10.pth.tar"),
                         help="SimCLR backbone checkpoint")
     parser.add_argument("--random_init", action="store_true",
                         help="Randomly initialize the image encoder (Table 5 ablation)")

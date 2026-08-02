@@ -33,7 +33,7 @@ def main():
     os.environ.setdefault("ADASEMSEG_DATA_ROOT", args.data_root)
 
     method_dir = os.path.join(REPO_ROOT, "methods", "adasemseg")
-    simclr_ckpt = os.path.join(REPO_ROOT, "checkpoints", "simclr", "simclr_resnet50_run2_epoch10.pth.tar")
+    simclr_ckpt = os.path.join(REPO_ROOT, "checkpoints", "simclr", "simclr_resnet50_epoch10.pth.tar")
 
     experiments = [
         {

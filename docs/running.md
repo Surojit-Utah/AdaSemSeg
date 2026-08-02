@@ -12,9 +12,11 @@ python run.py --run_id 1 --epochs 10 --batch-size 32 --arch resnet50 --device cu
 cd ../..
 ```
 
-The SimCLR checkpoint used in all paper evaluations is already provided at:
+The SimCLR checkpoint used in all paper evaluations is downloaded from Zenodo
+(`python scripts/download_assets.py --weights`, see [`REPRODUCE.md`](../REPRODUCE.md))
+into:
 ```
-checkpoints/simclr/simclr_resnet50_run2_epoch10.pth.tar
+checkpoints/simclr/simclr_resnet50_epoch10.pth.tar
 ```
 
 ## AdaSemSeg
@@ -23,14 +25,14 @@ checkpoints/simclr/simclr_resnet50_run2_epoch10.pth.tar
 ```bash
 cd methods/adasemseg
 python Main.py --run_id 1 --shots 1 --train \
-    --img_enc_checkpoint ../../checkpoints/simclr/simclr_resnet50_run2_epoch10.pth.tar \
+    --img_enc_checkpoint ../../checkpoints/simclr/simclr_resnet50_epoch10.pth.tar \
     --device cuda:0
 ```
 
 ### 5-shot training
 ```bash
 python Main.py --run_id 1 --shots 5 --train \
-    --img_enc_checkpoint ../../checkpoints/simclr/simclr_resnet50_run2_epoch10.pth.tar \
+    --img_enc_checkpoint ../../checkpoints/simclr/simclr_resnet50_epoch10.pth.tar \
     --device cuda:0
 ```
 
@@ -115,7 +117,7 @@ python Transfer_learning\Main.py --run_id 1 --train --train_indices 5 \
 ```bash
 cd methods/protosemseg
 python Main.py --run_id 1 --shots 5 --train \
-    --img_enc_checkpoint ../../checkpoints/simclr/simclr_resnet50_run2_epoch10.pth.tar \
+    --img_enc_checkpoint ../../checkpoints/simclr/simclr_resnet50_epoch10.pth.tar \
     --device cuda:0
 ```
 
@@ -125,7 +127,7 @@ python Evaluation_sampling\Main.py --visualize 1 --run_id 1 --shots 5 \
     --eval_mode val --checkpoint_dir <CKPT_DIR> --best_model --device cuda:0
 ```
 
-Or use the unified wrapper with a scenario key (requires the corresponding checkpoint directory; ProtoSemSeg checkpoints are not included in this repository push and will be available via IEEE DataPort):
+Or use the unified wrapper with a scenario key (requires the corresponding checkpoint directory; ProtoSemSeg checkpoints are downloaded from Zenodo into `checkpoints/protosemseg/<dataset>/<shots>-shot/`, see the README's "Model weights" section):
 ```bash
 python scripts/evaluate_protosemseg.py --scenario simclr_5-shot_sampling_f3 --device cuda:0
 ```

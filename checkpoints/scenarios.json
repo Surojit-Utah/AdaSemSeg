@@ -1,10 +1,11 @@
 {
   "description": "Default checkpoints for reproducing paper results. Paths are relative to the repository root.",
+  "known_gaps": "Table V (SimCLR vs. random-init ablation, Parihaka only) is not currently reproducible: the shipped random-init checkpoint measured PA=0.84 against its own logged eval, which does not match the paper's reported Random row (PA=0.72 5-shot / 0.61 1-shot); no 1-shot random-init checkpoint was found in the local research tree at all. Removed from this file pending a proper provenance re-audit.",
   "adasemseg": {
     "simclr": {
       "1-shot_sampling": {
         "f3": {
-          "checkpoint": "checkpoints/adasemseg/adasemseg_1shot_Run_3_f3_il_f3_xl_bestmodel.pth.tar",
+          "checkpoint": "checkpoints/adasemseg/f3/1-shot/bestmodel.pth.tar",
           "classes": [
             "f3_facies_data_inline",
             "f3_facies_data_crossline"
@@ -15,7 +16,7 @@
           "paper_fwiou": 0.79
         },
         "penobscot": {
-          "checkpoint": "checkpoints/adasemseg/adasemseg_1shot_Run_2_penobscot_il_penobscot_xl_bestmodel.pth.tar",
+          "checkpoint": "checkpoints/adasemseg/penobscot/1-shot/bestmodel.pth.tar",
           "classes": [
             "penobscot_facies_data_inline",
             "penobscot_facies_data_crossline"
@@ -24,11 +25,23 @@
           "use_nearest_slice": false,
           "paper_pa": 0.92,
           "paper_fwiou": 0.86
+        },
+        "parihaka": {
+          "checkpoint": "checkpoints/adasemseg/parihaka/1-shot/bestmodel.pth.tar",
+          "classes": [
+            "parihaka_facies_data_inline",
+            "parihaka_facies_data_crossline"
+          ],
+          "shots": 1,
+          "use_nearest_slice": false,
+          "paper_pa": 0.84,
+          "paper_fwiou": 0.74,
+          "note": "Recovered from the original SimCLR_init_dataset_v1/logs/checkpoints/1-shot/Run_1 training tree -- was never staged in the repo push. Measured PA/MCA/FwIoU/FwF1 match paper Table III/V exactly (0.84/0.75/0.74/0.84 inline, 0.82/0.71/0.71/0.83 crossline)."
         }
       },
       "5-shot_sampling": {
         "f3": {
-          "checkpoint": "checkpoints/adasemseg/adasemseg_nearest_5shot_Run_3_4datasets_bestmodel.pth.tar",
+          "checkpoint": "checkpoints/adasemseg/f3/5-shot/bestmodel.pth.tar",
           "classes": [
             "f3_facies_data_inline",
             "f3_facies_data_crossline"
@@ -39,18 +52,19 @@
           "paper_fwiou": 0.81
         },
         "parihaka": {
-          "checkpoint": "checkpoints/adasemseg/adasemseg_5shot_Run_4_parihaka_il_parihaka_xl_bestmodel.pth.tar",
+          "checkpoint": "checkpoints/adasemseg/parihaka/5-shot/bestmodel.pth.tar",
           "classes": [
             "parihaka_facies_data_inline",
             "parihaka_facies_data_crossline"
           ],
           "shots": 5,
           "use_nearest_slice": false,
-          "paper_pa": 0.75,
-          "paper_fwiou": 0.66
+          "paper_pa": 0.79,
+          "paper_fwiou": 0.67,
+          "note": "Same checkpoint file as simclr/5-shot_nearest_slice/parihaka -- one trained model, evaluated with two different support-sampling strategies (Table 1)."
         },
         "penobscot": {
-          "checkpoint": "checkpoints/adasemseg/adasemseg_nearest_5shot_Run_2_4datasets_bestmodel.pth.tar",
+          "checkpoint": "checkpoints/adasemseg/penobscot/5-shot/bestmodel.pth.tar",
           "classes": [
             "penobscot_facies_data_inline",
             "penobscot_facies_data_crossline"
@@ -63,7 +77,7 @@
       },
       "5-shot_nearest_slice": {
         "parihaka": {
-          "checkpoint": "checkpoints/adasemseg/adasemseg_nearest_5shot_Run_1_parihaka_il_parihaka_xl_bestmodel.pth.tar",
+          "checkpoint": "checkpoints/adasemseg/parihaka/5-shot/bestmodel.pth.tar",
           "classes": [
             "parihaka_facies_data_inline",
             "parihaka_facies_data_crossline"
@@ -74,7 +88,7 @@
           "paper_fwiou": 0.76
         },
         "penobscot": {
-          "checkpoint": "checkpoints/adasemseg/adasemseg_nearest_5shot_Run_2_4datasets_bestmodel.pth.tar",
+          "checkpoint": "checkpoints/adasemseg/penobscot/5-shot/bestmodel.pth.tar",
           "classes": [
             "penobscot_facies_data_inline"
           ],
@@ -84,43 +98,78 @@
           "paper_fwiou": 0.94
         }
       }
-    },
-    "random_init": {
+    }
+  },
+  "protosemseg": {
+    "simclr": {
+      "1-shot_sampling": {
+        "f3": {
+          "checkpoint": "checkpoints/protosemseg/f3/1-shot/bestmodel.pth.tar",
+          "classes": [
+            "f3_facies_data_inline",
+            "f3_facies_data_crossline"
+          ],
+          "shots": 1,
+          "paper_pa": 0.61,
+          "paper_fwiou": 0.45,
+          "note": "Verified exact match (all 4 metrics, both directions) against Proto_FSS/Evaluation_sampling/logs_paper and paper Table 3."
+        },
+        "penobscot": {
+          "checkpoint": "checkpoints/protosemseg/penobscot/1-shot/bestmodel.pth.tar",
+          "classes": [
+            "penobscot_facies_data_inline",
+            "penobscot_facies_data_crossline"
+          ],
+          "shots": 1,
+          "paper_pa": 0.56,
+          "paper_fwiou": 0.40,
+          "note": "Inline direction verified exact match against Proto_FSS/Evaluation_sampling/logs_paper and paper Table 3."
+        },
+        "parihaka": {
+          "checkpoint": "checkpoints/protosemseg/parihaka/1-shot/bestmodel.pth.tar",
+          "classes": [
+            "parihaka_facies_data_inline",
+            "parihaka_facies_data_crossline"
+          ],
+          "shots": 1,
+          "paper_pa": 0.56,
+          "paper_fwiou": 0.41,
+          "note": "Not individually spot-checked at 1-shot; mapping inferred from collected_checkpoints.json plus the verified 5-shot match for this same source checkpoint."
+        }
+      },
       "5-shot_sampling": {
         "f3": {
-          "checkpoint": "checkpoints/adasemseg/adasemseg_random_init_5shot_Run_1_f3_il_f3_xl_bestmodel.pth.tar",
+          "checkpoint": "checkpoints/protosemseg/f3/5-shot/bestmodel.pth.tar",
           "classes": [
             "f3_facies_data_inline",
             "f3_facies_data_crossline"
           ],
           "shots": 5,
-          "use_nearest_slice": false,
-          "random_init": true,
-          "paper_pa": 0.89,
-          "paper_fwiou": 0.82
-        },
-        "parihaka": {
-          "checkpoint": "checkpoints/adasemseg/adasemseg_random_init_5shot_Run_2_parihaka_il_penobscot_il_penobscot_xl_bestmodel.pth.tar",
-          "classes": [
-            "parihaka_facies_data_inline"
-          ],
-          "shots": 5,
-          "use_nearest_slice": false,
-          "random_init": true,
-          "paper_pa": 0.84,
-          "paper_fwiou": 0.74
+          "paper_pa": 0.73,
+          "paper_fwiou": 0.59,
+          "note": "Verified exact match (all 4 metrics, both directions) against Proto_FSS/Evaluation_sampling/logs_paper and paper Table 3."
         },
         "penobscot": {
-          "checkpoint": "checkpoints/adasemseg/adasemseg_random_init_5shot_Run_2_parihaka_il_penobscot_il_penobscot_xl_bestmodel.pth.tar",
+          "checkpoint": "checkpoints/protosemseg/penobscot/5-shot/bestmodel.pth.tar",
           "classes": [
             "penobscot_facies_data_inline",
             "penobscot_facies_data_crossline"
           ],
           "shots": 5,
-          "use_nearest_slice": false,
-          "random_init": true,
-          "paper_pa": 0.98,
-          "paper_fwiou": 0.96
+          "paper_pa": 0.71,
+          "paper_fwiou": 0.56,
+          "note": "Not individually spot-checked at 5-shot; mapping inferred from collected_checkpoints.json plus the verified 1-shot match for this same source checkpoint."
+        },
+        "parihaka": {
+          "checkpoint": "checkpoints/protosemseg/parihaka/5-shot/bestmodel.pth.tar",
+          "classes": [
+            "parihaka_facies_data_inline",
+            "parihaka_facies_data_crossline"
+          ],
+          "shots": 5,
+          "paper_pa": 0.59,
+          "paper_fwiou": 0.46,
+          "note": "Verified exact match (all 4 metrics, both directions) against Proto_FSS/Evaluation_sampling/logs_paper and paper Table 3, despite the original filename only mentioning '_il'."
         }
       }
     }

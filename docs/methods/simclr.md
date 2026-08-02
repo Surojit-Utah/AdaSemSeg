@@ -38,7 +38,7 @@ cd ../..
 ## Trained weights used in evaluations
 All downstream evaluations use:
 ```
-checkpoints/simclr/simclr_resnet50_run2_epoch10.pth.tar
+checkpoints/simclr/simclr_resnet50_epoch10.pth.tar
 ```
 This corresponds to `Contrastive_learning/SimCLR_debug/logs/checkpoints/Run_2/checkpoint_0010.pth.tar` from the original research folder.
 

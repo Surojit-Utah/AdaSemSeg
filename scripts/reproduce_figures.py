@@ -34,7 +34,7 @@ def main():
         "penobscot": ["penobscot_facies_data_inline", "penobscot_facies_data_crossline"],
     }
 
-    simclr_ckpt = os.path.join(REPO_ROOT, "checkpoints", "simclr", "simclr_resnet50_run2_epoch10.pth.tar")
+    simclr_ckpt = os.path.join(REPO_ROOT, "checkpoints", "simclr", "simclr_resnet50_epoch10.pth.tar")
 
     cmd = [
         sys.executable, os.path.join(REPO_ROOT, "methods", "adasemseg", "evaluate.py"),

@@ -15,6 +15,7 @@ import torch.nn as nn
 from torchvision import models
 
 sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from data.TestDataset import AdaSemSegTestDataset
 from models import DGP_resnet_unet
@@ -70,9 +71,19 @@ def build_model(img_enc_checkpoint, device, freeze_bn=False):
 
 
 def load_trained_model(checkpoint_path, model, device):
-    """Load full model checkpoint."""
+    """Load full model checkpoint.
+
+    Training (DGP_trainer.py) saves weights under the 'net' key; 'state_dict'
+    is accepted too for checkpoints saved in that alternate format.
+    """
     checkpoint = torch.load(checkpoint_path, map_location=device)
-    model.load_state_dict(checkpoint['state_dict'])
+    state_dict = checkpoint.get('net', checkpoint.get('state_dict'))
+    if state_dict is None:
+        raise KeyError(
+            f"Checkpoint {checkpoint_path} has neither 'net' nor 'state_dict' key. "
+            f"Available keys: {list(checkpoint.keys())}"
+        )
+    model.load_state_dict(state_dict)
     print(f"Loaded checkpoint from {checkpoint_path}")
     return model
 
@@ -262,7 +273,7 @@ def main():
     parser = argparse.ArgumentParser(description="Evaluate trained AdaSemSeg")
     parser.add_argument("--checkpoint", required=True, help="Path to trained checkpoint (bestmodel.pth.tar)")
     parser.add_argument("--img_enc_checkpoint",
-                        default="checkpoints/simclr/simclr_resnet50_run2_epoch10.pth.tar",
+                        default="checkpoints/simclr/simclr_resnet50_epoch10.pth.tar",
                         help="SimCLR backbone checkpoint (use with --random_init to omit loading)")
     parser.add_argument("--random_init", action="store_true",
                         help="Initialize the image encoder randomly (Table 5 random-init ablation)")

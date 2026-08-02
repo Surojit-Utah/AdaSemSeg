@@ -160,30 +160,51 @@ class AdaSemSegTestDataset(Dataset):
             self.support_slice_indices[class_name] = support_indices
             self.query_slice_indices[class_name] = query_indices
 
-            # Build patch grid for each query slice
+            # Build patch grid for each query slice.
+            # read_data() transposes each slice as data_vol[idx].T (or
+            # data_vol[:, idx, :].T), which always puts the depth axis
+            # (shape[2]) in the row position and the other spatial axis in
+            # the column position -- match that orientation here.
+            #
+            # sample_episode() reuses the query's row_index/col_index for the
+            # support crop too (support_examples start from a copy of
+            # query_example), i.e. support and query patches share the same
+            # spatial window and differ only in slice index. For datasets
+            # where train and test are separate volumes of different extents
+            # (F3), a row/col valid for the test volume can still be
+            # out-of-bounds in the train volume, so bound the grid by the
+            # intersection of both.
             test_vol = self.test_data_vol[class_name]
+            train_vol = self.train_data_vol[class_name]
+            image_height = min(test_vol.shape[2], train_vol.shape[2])
             if data_axis == 0:
-                slice_shape = (test_vol.shape[1], test_vol.shape[2])
+                image_width = min(test_vol.shape[1], train_vol.shape[1])
             else:
-                slice_shape = (test_vol.shape[0], test_vol.shape[2])
+                image_width = min(test_vol.shape[0], train_vol.shape[0])
 
-            image_height, image_width = slice_shape
-            min_row = self.patch_size // 2
-            max_row = image_height - (self.patch_size // 2)
             min_col = self.patch_size // 2
             max_col = image_width - (self.patch_size // 2)
-            row_sep = max(4, int(self.patch_size * self.patch_overlap))
             col_sep = max(4, int(self.patch_size * self.patch_overlap))
-
-            valid_row_indices = np.arange(min_row, max_row, row_sep).tolist()
             valid_col_indices = np.arange(min_col, max_col, col_sep).tolist()
 
+            if image_height < self.patch_size:
+                # Depth axis narrower than patch_size (e.g. F3, 255 < 256):
+                # read_data() pads/centers this axis and never indexes it with
+                # row_index, so a single placeholder row is enough.
+                valid_row_indices = [self.patch_size // 2]
+            else:
+                min_row = self.patch_size // 2
+                max_row = image_height - (self.patch_size // 2)
+                row_sep = max(4, int(self.patch_size * self.patch_overlap))
+                valid_row_indices = np.arange(min_row, max_row, row_sep).tolist()
+
+            num_before = len(img_metadata)
             for query_slice in query_indices:
                 for row_index in valid_row_indices:
                     for col_index in valid_col_indices:
                         img_metadata.append([class_name, query_slice, row_index, col_index])
 
-            print(f'Total (test) patches for class {class_name}: {len(img_metadata)}')
+            print(f'Total (test) patches for class {class_name}: {len(img_metadata) - num_before}')
 
         return img_metadata
 

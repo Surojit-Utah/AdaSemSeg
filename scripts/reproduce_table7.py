@@ -24,7 +24,7 @@ def main():
     parser = argparse.ArgumentParser(description="Reproduce Table 7")
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--img_enc_checkpoint",
-                        default=os.path.join("checkpoints", "simclr", "simclr_resnet50_run2_epoch10.pth.tar"))
+                        default=os.path.join("checkpoints", "simclr", "simclr_resnet50_epoch10.pth.tar"))
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--classes", nargs="+", default=None)
     parser.add_argument("--shots", type=int, default=1)

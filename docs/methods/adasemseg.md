@@ -25,7 +25,7 @@ AdaSemSeg turns multi-class seismic facies segmentation into multiple binary tas
 ```bash
 cd methods/adasemseg
 python Main.py --run_id 1 --shots 5 --train \
-    --img_enc_checkpoint ../../checkpoints/simclr/simclr_resnet50_run2_epoch10.pth.tar \
+    --img_enc_checkpoint ../../checkpoints/simclr/simclr_resnet50_epoch10.pth.tar \
     --device cuda:0
 ```
 

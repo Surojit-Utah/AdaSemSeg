@@ -9,14 +9,29 @@ __pycache__/
 logs/
 runs/
 *.log
+evaluation_results/
 
 # Data and checkpoints
-# Model weights and datasets are tracked with Git LFS and shipped with this repo.
-# Only AdaSemSeg + SimCLR weights are included; ProtoSemSeg weights are excluded.
+# Datasets and model weights (both hosted on Zenodo) are downloaded on demand
+# via scripts/download_assets.py, not committed to this repo. Keep the directory
+# structure under version control (via .gitkeep) but ignore the binaries.
 !data/
 !checkpoints/
-checkpoints/protosemseg/
+checkpoints/**/*.pth.tar
+checkpoints/**/*.pth
+checkpoints/*.zip
+!checkpoints/**/.gitkeep
 Repo_checkpoints_excluded/
+
+# Raw Penobscot source file (2.2GB) -- not redistributed; see data/Penobscot/process_data.py
+# for how to obtain it and reproduce seismic.npy / seismic_labels.npy from it.
+data/Penobscot/dataset.h5
+
+# Dataset volumes -- downloaded from Zenodo (10.5281/zenodo.21764042) via
+# scripts/download_assets.py, not committed here. split_train_val_test_*.json
+# files stay tracked since they're small and define the paper's exact splits.
+data/**/*.npy
+data/**/*.zip
 
 # OS
 .DS_Store
