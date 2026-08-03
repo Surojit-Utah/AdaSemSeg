@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Reproduce Table 1: AdaSemSeg main results on F3, Parihaka, and Penobscot.
+Reproduce Table I: AdaSemSeg main results on F3, Parihaka, and Penobscot.
 
 For each held-out target dataset, trains on the remaining two source datasets
 and evaluates on the target. F3 and Penobscot use 5-shot random support;
@@ -22,7 +22,7 @@ def run(cmd, cwd=REPO_ROOT):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Reproduce Table 1")
+    parser = argparse.ArgumentParser(description="Reproduce Table I")
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--skip_training", action="store_true",
                         help="Skip training and only run evaluation (expects checkpoints)")
@@ -102,7 +102,7 @@ def main():
             cmd.append("--use_nearest_slice")
         run(cmd, cwd=method_dir)
 
-    print("\nTable 1 reproduction complete. See evaluation outputs under methods/adasemseg/logs/table1/")
+    print("\nTable I reproduction complete. See evaluation outputs under methods/adasemseg/logs/table1/")
 
 
 if __name__ == "__main__":

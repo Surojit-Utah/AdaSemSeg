@@ -73,11 +73,11 @@ All published checkpoints are indexed in `checkpoints/scenarios.json`. Use the `
 ### AdaSemSeg
 
 AdaSemSeg supports two support-sampling strategies that correspond to the two
-evaluation modes in Table 1:
+evaluation modes in Table I:
 
 - **K-shot random support**: for F3 and Penobscot results.
 - **Nearest-slice support**: for Parihaka results (and the nearest-slice ablation
-  in Table 1).
+  in Table I).
 
 #### F3 and Penobscot (5-shot random support)
 ```bash
@@ -118,16 +118,16 @@ python scripts/evaluate_baseline.py \
 
 | Paper item | Command |
 |------------|---------|
-| Table 1 | `python scripts/reproduce_table1.py --device cuda:0` |
-| Table 2 | `python scripts/reproduce_table2.py --device cuda:0` |
-| Table 3 | `python scripts/reproduce_table3.py --device cuda:0` |
-| Table 5 | `python scripts/reproduce_table5.py --shots 5 --device cuda:0` |
-| Table 6 | `python scripts/reproduce_table6.py --device cuda:0` |
-| Table 7 | `python scripts/reproduce_table7.py --checkpoint <CKPT> --device cuda:0` |
-| Table 8 | `python scripts/reproduce_table8.py --checkpoint <CKPT> --device cuda:0` |
+| Table I | `python scripts/reproduce_table1.py --device cuda:0` |
+| Table II | `python scripts/reproduce_table2.py --device cuda:0` |
+| Table III | `python scripts/reproduce_table3.py --device cuda:0` |
+| Table IV | `python scripts/reproduce_table4.py --shots 5 --device cuda:0` |
+| Table V | `python scripts/reproduce_table5.py --device cuda:0` |
+| Table VI | `python scripts/reproduce_table6.py --checkpoint <CKPT> --device cuda:0` |
+| Table VII | `python scripts/reproduce_table7.py --checkpoint <CKPT> --device cuda:0` |
 | Figures | `python scripts/reproduce_figures.py --checkpoint <CKPT> --target {f3,parihaka,penobscot} --device cuda:0` |
 
-Add `--run_commands` to Tables 2/3 to execute the printed commands. Tables 2/3 also require the source/target classes in each method's `config/local_config.py` to be set correctly (the script prints the expected list).
+Add `--run_commands` to Tables II/III to execute the printed commands. Tables II/III also require the source/target classes in each method's `config/local_config.py` to be set correctly (the script prints the expected list).
 
 ## 5. Metrics
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Reproduce Table 3: AdaSemSeg vs ProtoSemSeg vs transfer learning (1/5-shot).
+Reproduce Table III: AdaSemSeg vs ProtoSemSeg vs transfer learning (1/5-shot).
 
 For each held-out target dataset, this script prints (and optionally runs) the
 training and evaluation commands for:
@@ -24,7 +24,7 @@ def run(cmd, cwd=REPO_ROOT):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Reproduce Table 3")
+    parser = argparse.ArgumentParser(description="Reproduce Table III")
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--run_commands", action="store_true",
                         help="Actually execute the commands (default: print only)")
@@ -45,7 +45,7 @@ def main():
     proto_dir = os.path.join(REPO_ROOT, "methods", "protosemseg")
     baseline_dir = os.path.join(REPO_ROOT, "methods", "baselines")
 
-    print("Table 3 reproduction commands")
+    print("Table III reproduction commands")
     print("=" * 70)
 
     commands = []
@@ -123,7 +123,7 @@ def main():
         if args.run_commands:
             run(cmd, cwd=cwd)
 
-    print("\nTable 3 reproduction instructions printed.")
+    print("\nTable III reproduction instructions printed.")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
-Reproduce Table 2: AdaSemSeg vs baselines trained only on the target dataset.
+Reproduce Table II: AdaSemSeg vs baselines trained only on the target dataset.
 
-Table 2 compares three methods:
+Table II compares three methods:
   - AdaSemSeg (few-shot, trained on source datasets, evaluated on target)
   - Baseline-1 (AdaSemSeg architecture trained on target support slices)
   - Baseline-2 (regular ResNet-UNet segmentation trained on target support slices)
@@ -27,7 +27,7 @@ def run(cmd, cwd=REPO_ROOT):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Reproduce Table 2")
+    parser = argparse.ArgumentParser(description="Reproduce Table II")
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--run_commands", action="store_true",
                         help="Actually execute the commands (default: print only)")
@@ -48,7 +48,7 @@ def main():
     adasemseg_dir = os.path.join(REPO_ROOT, "methods", "adasemseg")
     baseline_dir = os.path.join(REPO_ROOT, "methods", "baselines")
 
-    print("Table 2 reproduction commands")
+    print("Table II reproduction commands")
     print("=" * 70)
     print("For each target dataset T, the required steps are:")
     print("  1. AdaSemSeg: train on the two source datasets, evaluate on T inline+crossline.")
@@ -129,7 +129,7 @@ def main():
         if args.run_commands:
             run(cmd, cwd=cwd)
 
-    print("\nTable 2 reproduction instructions printed.")
+    print("\nTable II reproduction instructions printed.")
 
 
 if __name__ == "__main__":

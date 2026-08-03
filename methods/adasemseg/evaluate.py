@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from data.TestDataset import AdaSemSegTestDataset
-from models import DGP_resnet_unet
+from models import DGP_resnet_unet, DGP_unet
 from kernels.gp_kernels import RBF
 from scripts.config_loader import make_eval_data_info_catalogue
 
@@ -32,40 +32,61 @@ def seed_all(seed):
         torch.cuda.manual_seed_all(seed)
 
 
-def build_model(img_enc_checkpoint, device, freeze_bn=False):
-    """Build AdaSemSeg model with ResNet50 encoder and load SimCLR weights if provided."""
+def build_model(img_enc_checkpoint, device, freeze_bn=False, img_enc_type='resnet'):
+    """Build AdaSemSeg model. img_enc_type='resnet' loads SimCLR weights if provided
+    (the architecture used throughout the paper); img_enc_type='unet' builds the
+    plain UNet-encoder variant (no pretraining path, trained from scratch)."""
     covar_size = 5
     covariance_output_mode = 'concatenate variance'
     depth_image_encoder = 512
 
-    resnet = models.resnet50(pretrained=False)
-    resnet.fc = nn.Identity()
+    if img_enc_type == 'resnet':
+        resnet = models.resnet50(pretrained=False)
+        resnet.fc = nn.Identity()
 
-    if img_enc_checkpoint:
-        checkpoint_dict = torch.load(img_enc_checkpoint, map_location=device)
-        trained_model_param = checkpoint_dict['state_dict']
-        sliced = islice(trained_model_param.items(), len(trained_model_param.keys()) - 4)
-        trained_model_param = OrderedDict(sliced)
-        trained_model_param = OrderedDict([
-            (k.replace('backbone.', ''), v) for k, v in trained_model_param.items()
-        ])
-        resnet.load_state_dict(trained_model_param, strict=True)
-        print("Loaded SimCLR backbone.")
+        if img_enc_checkpoint:
+            checkpoint_dict = torch.load(img_enc_checkpoint, map_location=device)
+            trained_model_param = checkpoint_dict['state_dict']
+            sliced = islice(trained_model_param.items(), len(trained_model_param.keys()) - 4)
+            trained_model_param = OrderedDict(sliced)
+            trained_model_param = OrderedDict([
+                (k.replace('backbone.', ''), v) for k, v in trained_model_param.items()
+            ])
+            resnet.load_state_dict(trained_model_param, strict=True)
+            print("Loaded SimCLR backbone.")
 
-    img_encoder_obj = DGP_resnet_unet.Image_Encoder(resnet, freeze_bn)
-    mask_encoder_obj = DGP_resnet_unet.Mask_Encoder()
-    dgp_model = DGP_resnet_unet.DGPModel(
-        kernel=RBF(length=(1 / (depth_image_encoder ** 0.25))),
-        covariance_output_mode=covariance_output_mode,
-        covar_size=covar_size
-    )
-    fss_decoder_obj = DGP_resnet_unet.FSS_Decoder(covar_size=covar_size)
-    fss_learner_obj = DGP_resnet_unet.FSSLearner(
-        image_encoder=img_encoder_obj,
-        anno_encoder=mask_encoder_obj,
-        dgp_model=dgp_model,
-        upsampler=fss_decoder_obj
-    )
+        img_encoder_obj = DGP_resnet_unet.Image_Encoder(resnet, freeze_bn)
+        mask_encoder_obj = DGP_resnet_unet.Mask_Encoder()
+        dgp_model = DGP_resnet_unet.DGPModel(
+            kernel=RBF(length=(1 / (depth_image_encoder ** 0.25))),
+            covariance_output_mode=covariance_output_mode,
+            covar_size=covar_size
+        )
+        fss_decoder_obj = DGP_resnet_unet.FSS_Decoder(covar_size=covar_size)
+        fss_learner_obj = DGP_resnet_unet.FSSLearner(
+            image_encoder=img_encoder_obj,
+            anno_encoder=mask_encoder_obj,
+            dgp_model=dgp_model,
+            upsampler=fss_decoder_obj
+        )
+    elif img_enc_type == 'unet':
+        img_encoder_obj = DGP_unet.Image_Encoder(features=32)
+        mask_encoder_obj = DGP_unet.Mask_Encoder(features=8)
+        dgp_model = DGP_unet.DGPModel(
+            kernel=RBF(length=(1 / (depth_image_encoder ** 0.25))),
+            covariance_output_mode=covariance_output_mode,
+            covar_size=covar_size
+        )
+        fss_decoder_obj = DGP_unet.FSS_Decoder(image_features=32, mask_features=8, covar_size=covar_size)
+        fss_learner_obj = DGP_unet.FSSLearner(
+            image_encoder=img_encoder_obj,
+            anno_encoder=mask_encoder_obj,
+            dgp_model=dgp_model,
+            upsampler=fss_decoder_obj
+        )
+    else:
+        raise ValueError(f"Unknown img_enc_type: {img_enc_type!r}. Expected 'resnet' or 'unet'.")
+
     fss_learner_obj.to(device)
     return fss_learner_obj
 
@@ -127,11 +148,14 @@ def evaluate(model, test_loader, device, num_classes, class_indices, class_weigh
             # Save individual prediction patches for figure generation
             if save_predictions and save_dir:
                 b = pred_np.shape[0]
+                # query_image: (B, 1, 1, H, W) -> squeeze to (B, H, W) grayscale in [0, 1]
+                query_img_np = query_image.squeeze(1).squeeze(1).cpu().numpy()
                 for i in range(b):
                     out_name = f"{class_name}_s{data['query_slice_index'][i]}_r{data['query_row'][i]}_c{data['query_col'][i]}.npz"
                     np.savez(os.path.join(save_dir, out_name),
                              pred=pred_np[i, 0],
                              gt=gt_np[i, 0],
+                             query_image=query_img_np[i],
                              class_name=class_name,
                              slice_index=int(data['query_slice_index'][i]),
                              row=int(data['query_row'][i]),
@@ -158,7 +182,7 @@ def aggregate_metrics(results, class_indices, num_classes):
 
     Metrics are computed independently for each dataset/class and then averaged,
     matching the paper's per-dataset reporting style. Per-class IoU and F1 are
-    also reported for Table 8-style sensitivity analysis.
+    also reported for Table VII-style sensitivity analysis.
     """
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'scripts'))
     from metrics import (pixel_accuracy, mean_class_accuracy, frequency_weighted_iou,
@@ -203,7 +227,8 @@ def aggregate_metrics(results, class_indices, num_classes):
 def run_evaluation(checkpoint, img_enc_checkpoint=None, classes=None, shots=5,
                    use_nearest_slice=False, eval_mode='test', data_root='./data',
                    output_dir='./evaluation_results', device='cuda:0',
-                   batch_size=1, patch_size=256, seed=0, save_predictions=False):
+                   batch_size=1, patch_size=256, seed=0, save_predictions=False,
+                   img_enc_type='resnet'):
     """Programmatic entry point used by both the CLI and Main.py."""
     seed_all(seed)
     os.environ["ADASEMSEG_DATA_ROOT"] = data_root
@@ -218,7 +243,7 @@ def run_evaluation(checkpoint, img_enc_checkpoint=None, classes=None, shots=5,
     print("Evaluating classes:", classes)
 
     # Build model
-    model = build_model(img_enc_checkpoint, device)
+    model = build_model(img_enc_checkpoint, device, img_enc_type=img_enc_type)
     model = load_trained_model(checkpoint, model, device)
 
     # Build test dataset
@@ -276,7 +301,11 @@ def main():
                         default="checkpoints/simclr/simclr_resnet50_epoch10.pth.tar",
                         help="SimCLR backbone checkpoint (use with --random_init to omit loading)")
     parser.add_argument("--random_init", action="store_true",
-                        help="Initialize the image encoder randomly (Table 5 random-init ablation)")
+                        help="Initialize the image encoder randomly (Table IV random-init ablation)")
+    parser.add_argument("--img_enc_type", default="resnet", choices=["resnet", "unet"],
+                        help="Image encoder architecture the checkpoint was trained with. "
+                             "'resnet' is the SimCLR-initialized encoder used throughout the paper; "
+                             "'unet' is the plain from-scratch alternate encoder (no --img_enc_checkpoint).")
     parser.add_argument("--classes", nargs="+", default=None,
                         help="Class names to evaluate (default: all target classes)")
     parser.add_argument("--shots", type=int, default=5, choices=[1, 5])
@@ -307,6 +336,7 @@ def main():
         patch_size=args.patch_size,
         seed=args.seed,
         save_predictions=args.save_predictions,
+        img_enc_type=args.img_enc_type,
     )
 
 

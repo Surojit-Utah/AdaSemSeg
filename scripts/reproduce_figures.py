@@ -3,8 +3,8 @@
 Reproduce paper prediction figures (F3, Parihaka, Penobscot).
 
 Runs the unified AdaSemSeg evaluator with --save_predictions so that predicted
-patches, ground-truth patches, and metadata are written to disk. These can be
-assembled into the figures using the helper notebook/script in `docs/figures/`.
+patches, ground-truth patches, and metadata are written to disk. Assemble these
+into the paper-style qualitative panels with scripts/assemble_figures.py.
 """
 import argparse
 import os
@@ -52,8 +52,10 @@ def main():
 
     print("Running:", " ".join(cmd))
     subprocess.run(cmd, cwd=REPO_ROOT, check=True)
-    print(f"\nPrediction patches saved to {os.path.join(args.output_dir, 'prediction_patches')}")
-    print("Use docs/figures/ to assemble these into the paper figures.")
+    patches_dir = os.path.join(args.output_dir, 'prediction_patches')
+    print(f"\nPrediction patches saved to {patches_dir}")
+    print(f"Assemble into paper-style panel figures with:\n"
+          f"  python scripts/assemble_figures.py --patches_dir {patches_dir}")
 
 
 if __name__ == "__main__":

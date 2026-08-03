@@ -60,10 +60,12 @@ class CustomDataset(Dataset):
 
         self.img_metadata_classwise, self.per_class_sample_indices = self.build_img_metadata_classwise()
 
-        self.aug_dict = {1: RandomRotate(p=0.5),
+        # Same augmentation ranges as AdaSemSeg (paper Appendix B): trained with the
+        # same configuration for a fair comparison.
+        self.aug_dict = {1: RandomRotate(rot_range=20, p=0.5),
                          2: RandomHorizontalFlip(p=0.5),
                          3: GaussianBlur(p=0.5),
-                         4: GaussNoise(p=0.5)}
+                         4: GaussNoise(var_limit=(1e-4, 5e-2), p=0.5)}
 
         self.total_aug_count = len(self.aug_dict.keys())
 

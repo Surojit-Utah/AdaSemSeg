@@ -12,7 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import models
 from config.local_config import create_config
 from train.DGP_trainer import Deep_GP_Trainer
-from models import DGP_resnet_unet
+from models import DGP_resnet_unet, DGP_unet
 from kernels.gp_kernels import RBF, LinearKernel
 from data.Datasets import Seismic_Segmentation_Task
 
@@ -57,6 +57,7 @@ def test(args, device, save_dir):
         batch_size=1,
         patch_size=args.patch_size,
         seed=args.seed,
+        img_enc_type=args.img_enc_type,
     )
 
 
@@ -69,11 +70,11 @@ def main():
     parser.add_argument("--test", action="store_true", default=False)
     parser.add_argument("--test_num_support", type=int, default=5)
     parser.add_argument("--use_nearest_slice", action="store_true", default=False,
-                        help="Use the nearest support slice for evaluation (needed for Parihaka and Table 1).")
+                        help="Use the nearest support slice for evaluation (needed for Parihaka and Table I).")
     parser.add_argument("--patch_size", type=int, default=256)
     parser.add_argument("--augmentation", type=str, default='all',
                         choices=['none', 'RandomRotate', 'HFlip', 'GaussianBlur', 'GaussNoise', 'all'],
-                        help="Training augmentation ablation for Table 6")
+                        help="Training augmentation ablation for Table V")
     parser.add_argument("--freeze_bn", action="store_true", default=False)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--img_enc_type", type=str, default='resnet', help="Could be UNet (input unet) or ResNet50 (input resnet)")
@@ -81,7 +82,7 @@ def main():
     parser.add_argument("--checkpoint")
     parser.add_argument("--image_net_stat", type=bool, default=False)
     parser.add_argument("--random_init", action="store_true", default=False,
-                        help="Randomly initialize the image encoder (Table 5 ablation; ignores --img_enc_checkpoint)")
+                        help="Randomly initialize the image encoder (Table IV ablation; ignores --img_enc_checkpoint)")
     parser.add_argument("-d", "--device", dest="device", help="Device to run on, the cpu or gpu.",
                         type=str, default="cuda:0")
     parser.add_argument("--classes", nargs="+", default=None,
@@ -145,6 +146,17 @@ def main():
         fss_learner_obj = DGP_resnet_unet.FSSLearner(image_encoder=img_encoder_obj, anno_encoder=mask_encoder_obj, dgp_model=dgp_model, upsampler=fss_decoder_obj)
         print("Done with the model initialization of the Resnet_UNet....")
         loaded_encoder_chkpnt = True
+    elif img_enc_type=='unet':
+        # Plain UNet encoder (no ImageNet/SimCLR pretraining path -- trained from scratch).
+        img_encoder_obj = DGP_unet.Image_Encoder(features=32)
+        mask_encoder_obj = DGP_unet.Mask_Encoder(features=8)
+        dgp_model = DGP_unet.DGPModel(kernel=RBF(length=(1/(depth_image_encoder**0.25))),
+                             covariance_output_mode=covariance_output_mode, covar_size=covar_size)
+        fss_decoder_obj = DGP_unet.FSS_Decoder(image_features=32, mask_features=8, covar_size=covar_size)
+        fss_learner_obj = DGP_unet.FSSLearner(image_encoder=img_encoder_obj, anno_encoder=mask_encoder_obj, dgp_model=dgp_model, upsampler=fss_decoder_obj)
+        print("Done with the model initialization of the UNet....")
+    else:
+        raise ValueError(f"Unknown --img_enc_type: {img_enc_type!r}. Expected 'resnet' or 'unet'.")
     fss_learner_obj.to(device)
 
     config = create_config()

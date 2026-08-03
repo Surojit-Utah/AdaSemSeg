@@ -1,85 +1,87 @@
 #!/usr/bin/env python
 """
-Reproduce Table 6: Data-augmentation ablation on Parihaka (1-shot).
+Reproduce Table VI: Average inference time (seconds) on GPU and CPU.
 
-Trains AdaSemSeg on Penobscot + F3 using a single augmentation strategy at a
-time (or none/all) and evaluates on Parihaka inline/crossline with nearest-slice
-support selection.
+Times the evaluation of a trained model on a single query patch over a small
+number of warm-up and measured iterations. Timing must be performed on the
+actual hardware where the paper experiments were run; this script provides a
+standardized measurement harness.
 """
 import argparse
 import os
-import subprocess
 import sys
+import time
+import numpy as np
+import torch
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-
-def run(cmd, cwd=REPO_ROOT):
-    print("\n" + "=" * 70)
-    print("Running:", " ".join(cmd))
-    print("=" * 70)
-    subprocess.run(cmd, cwd=cwd, check=True)
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "methods", "adasemseg"))
+from evaluate import build_model, load_trained_model
+from data.TestDataset import AdaSemSegTestDataset
+from scripts.config_loader import make_eval_data_info_catalogue
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Reproduce Table 6")
+    parser = argparse.ArgumentParser(description="Reproduce Table VI")
+    parser.add_argument("--checkpoint", required=True)
+    parser.add_argument("--img_enc_checkpoint",
+                        default=os.path.join("checkpoints", "simclr", "simclr_resnet50_epoch10.pth.tar"))
     parser.add_argument("--device", default="cuda:0")
-    parser.add_argument("--skip_training", action="store_true",
-                        help="Skip training and only run evaluation (expects checkpoints)")
-    parser.add_argument("--epochs", type=int, default=10, help="Training epochs")
+    parser.add_argument("--classes", nargs="+", default=None)
+    parser.add_argument("--shots", type=int, default=1)
+    parser.add_argument("--use_nearest_slice", action="store_true")
+    parser.add_argument("--warm_up", type=int, default=5)
+    parser.add_argument("--iterations", type=int, default=20)
     parser.add_argument("--data_root", default=os.environ.get("ADASEMSEG_DATA_ROOT", "./data"))
     args = parser.parse_args()
 
-    os.environ.setdefault("ADASEMSEG_DATA_ROOT", args.data_root)
+    os.environ["ADASEMSEG_DATA_ROOT"] = args.data_root
+    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
+    print(f"Device: {device}")
 
-    method_dir = os.path.join(REPO_ROOT, "methods", "adasemseg")
-    simclr_ckpt = os.path.join(REPO_ROOT, "checkpoints", "simclr", "simclr_resnet50_epoch10.pth.tar")
+    model = build_model(args.img_enc_checkpoint, device)
+    model = load_trained_model(args.checkpoint, model, device)
+    model.eval()
 
-    source_classes = [
-        "f3_facies_data_inline",
-        "f3_facies_data_crossline",
-        "penobscot_facies_data_inline",
-        "penobscot_facies_data_crossline",
-    ]
+    data_info = make_eval_data_info_catalogue()
+    classes = args.classes if args.classes else list(data_info.keys())
+    test_dataset = AdaSemSegTestDataset(
+        classes=classes,
+        data_info=data_info,
+        patch_size=256,
+        k_shot=args.shots,
+        use_nearest_slice=args.use_nearest_slice,
+        eval_mode='test',
+        batch_size=1,
+    )
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=0)
 
-    augmentations = ["none", "RandomRotate", "HFlip", "GaussianBlur", "GaussNoise", "all"]
+    times = []
+    with torch.no_grad():
+        for batch_idx, data in enumerate(test_loader):
+            if batch_idx >= args.warm_up + args.iterations:
+                break
+            data = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in data.items()}
+            support_images = data['support_images']
+            support_split_masks = data['support_split_masks']
+            query_image = data['query_image']
 
-    for aug in augmentations:
-        run_id = 1
-        train_dir = os.path.join(method_dir, "logs", "table6", aug)
-        os.makedirs(train_dir, exist_ok=True)
+            start = time.perf_counter()
+            class_name = data['data_class'][0]
+            class_label = test_dataset.class_labels[class_name][0]
+            online_models = model.learn(support_images, support_split_masks[:, :, class_label - 1])
+            _ = torch.squeeze(model(query_image, online_models), axis=1)
+            if device.type == "cuda":
+                torch.cuda.synchronize()
+            elapsed = time.perf_counter() - start
 
-        if not args.skip_training:
-            run([
-                sys.executable, "Main.py",
-                "--run_id", str(run_id),
-                "--shots", "1",
-                "--train",
-                "--classes",
-            ] + source_classes + [
-                "--augmentation", aug,
-                "--img_enc_checkpoint", simclr_ckpt,
-                "--device", args.device,
-            ], cwd=method_dir)
+            if batch_idx >= args.warm_up:
+                times.append(elapsed)
 
-        ckpt = os.path.join(train_dir, "checkpoints", "1-shot", f"Run_{run_id}", "bestmodel.pth.tar")
-        if not os.path.exists(ckpt):
-            print(f"WARNING: checkpoint {ckpt} not found; skipping {aug} evaluation.")
-            continue
-
-        out_dir = os.path.join(train_dir, "eval")
-        run([
-            sys.executable, "evaluate.py",
-            "--checkpoint", ckpt,
-            "--img_enc_checkpoint", simclr_ckpt,
-            "--shots", "1",
-            "--use_nearest_slice",
-            "--classes", "parihaka_facies_data_inline", "parihaka_facies_data_crossline",
-            "--output_dir", out_dir,
-            "--device", args.device,
-        ], cwd=method_dir)
-
-    print("\nTable 6 reproduction complete. See evaluation outputs under methods/adasemseg/logs/table6/")
+    if times:
+        print(f"Mean inference time over {len(times)} iterations: {np.mean(times):.4f}s")
+        print(f"Std: {np.std(times):.4f}s")
+    else:
+        print("No iterations measured.")
 
 
 if __name__ == "__main__":

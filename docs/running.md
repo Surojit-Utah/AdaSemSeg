@@ -37,8 +37,9 @@ python Main.py --run_id 1 --shots 5 --train \
 ```
 
 ### Ablation flags
-- Random initialization (Table 5): add `--random_init`
-- Single augmentation (Table 6): add `--augmentation RandomRotate` (also accepts `none`, `HFlip`, `GaussianBlur`, `GaussNoise`, `all`)
+- Random initialization (Table IV): add `--random_init`
+- Single augmentation (Table V): add `--augmentation RandomRotate` (also accepts `none`, `HFlip`, `GaussianBlur`, `GaussNoise`, `all`)
+- Alternate encoder architecture: add `--img_enc_type unet` to use the plain UNet encoder (`models/DGP_unet.py`) instead of the default ResNet50; no `--img_enc_checkpoint` applies in this mode. Ported from the original research workspace; not tied to a specific verified paper table.
 
 Example:
 ```bash
@@ -54,13 +55,13 @@ The simplest way to evaluate a published checkpoint is to use its scenario key f
 python scripts/evaluate_adasemseg.py --scenario simclr_5-shot_sampling_f3 --device cuda:0
 ```
 
-#### K-shot random support (F3 and Penobscot in Table 1)
+#### K-shot random support (F3 and Penobscot in Table I)
 ```bash
 python scripts/evaluate_adasemseg.py --scenario simclr_5-shot_sampling_f3 --device cuda:0
 python scripts/evaluate_adasemseg.py --scenario simclr_5-shot_sampling_penobscot --device cuda:0
 ```
 
-#### Nearest-slice support (Parihaka in Table 1)
+#### Nearest-slice support (Parihaka in Table I)
 ```bash
 python scripts/evaluate_adasemseg.py --scenario simclr_5-shot_nearest_slice_parihaka --device cuda:0
 ```
@@ -142,31 +143,34 @@ python scripts/evaluate_protosemseg.py --scenario simclr_5-shot_sampling_f3 --de
 For paper-specific reproduction, use the wrapper scripts:
 
 ```bash
-# Table 1: main AdaSemSeg results
+# Table I: main AdaSemSeg results
 python scripts/reproduce_table1.py --device cuda:0
 
-# Table 2: AdaSemSeg vs baselines trained on target
+# Table II: AdaSemSeg vs baselines trained on target
 python scripts/reproduce_table2.py --device cuda:0
 
-# Table 3: AdaSemSeg vs ProtoSemSeg vs transfer learning
+# Table III: AdaSemSeg vs ProtoSemSeg vs transfer learning
 python scripts/reproduce_table3.py --device cuda:0
 
-# Table 5: random init vs SimCLR init on Parihaka
-python scripts/reproduce_table5.py --shots 5 --device cuda:0
+# Table IV: random init vs SimCLR init on Parihaka
+python scripts/reproduce_table4.py --shots 5 --device cuda:0
 
-# Table 6: augmentation ablation on Parihaka (1-shot)
-python scripts/reproduce_table6.py --device cuda:0
+# Table V: augmentation ablation on Parihaka (1-shot)
+python scripts/reproduce_table5.py --device cuda:0
 
-# Table 7: inference-time comparison (requires trained checkpoints)
+# Table VI: inference-time comparison (requires trained checkpoints)
+python scripts/reproduce_table6.py --checkpoint <CKPT> --device cuda:0
+
+# Table VII: class-wise IoU/F1 sensitivity
 python scripts/reproduce_table7.py --checkpoint <CKPT> --device cuda:0
 
-# Table 8: class-wise IoU/F1 sensitivity
-python scripts/reproduce_table8.py --checkpoint <CKPT> --device cuda:0
-
-# Figures 4/5/6/8: prediction patches for a target dataset
+# Figures 12/17/18 (F3/Parihaka/Penobscot prediction patches; Parihaka and Penobscot figures are in Appendix C)
 python scripts/reproduce_figures.py --checkpoint <CKPT> --target f3 --device cuda:0
 python scripts/reproduce_figures.py --checkpoint <CKPT> --target parihaka --device cuda:0
 python scripts/reproduce_figures.py --checkpoint <CKPT> --target penobscot --device cuda:0
+
+# Assemble the saved patches into paper-style qualitative panel figures
+python scripts/assemble_figures.py --patches_dir <output_dir>/prediction_patches
 ```
 
 Add `--run_commands` to Tables 2/3 to execute the printed commands.

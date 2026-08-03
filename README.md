@@ -63,7 +63,7 @@ At inference time, only a few annotated support slices from the target volume ar
 - `configs/` — Unified `datasets.yaml` and shared hyperparameters
 - `scripts/` — One-command evaluation and reproduction wrappers
 - `checkpoints/` — AdaSemSeg, ProtoSemSeg, and SimCLR initialization weights (downloaded from Zenodo, see [Model weights](#model-weights))
-- `docs/` — Paper figures, method descriptions, HTML summaries, and `running.md`
+- `docs/` — Paper figures, method descriptions, and `running.md`
 - `REPRODUCE.md` — Step-by-step reproduction of every table/figure in the paper
 
 ## Installation
@@ -167,7 +167,7 @@ AdaSemSeg is evaluated with two support-set strategies. For **F3** and **Penobsc
 | **Penobscot** | ✗ | **0.97** | **0.95** | **0.93** | **0.96** | ✓ | 0.96 | 0.94 | 0.92 | 0.95 |
 | **Parihaka** | ✗ | 0.79 | 0.65 | 0.67 | 0.80 | ✓ | **0.84** | **0.68** | **0.74** | **0.85** |
 
-*Table 1: AdaSemSeg evaluation using K=5 support examples vs. the nearest slice. Bold = best per row. More details in REPRODUCE.md.*
+*Paper Table I: AdaSemSeg evaluation using K=5 support examples vs. the nearest slice. Bold = best per row. More details in REPRODUCE.md.*
 
 ### Comparison with competing methods
 
@@ -182,7 +182,7 @@ AdaSemSeg is compared against **ProtoSemSeg** (a prototype-based FSSS method) an
 | F3 inline | 1 | FwF1 | **0.85** | 0.55 | 0.84 |
 | F3 inline | 5 | FwF1 | **0.89** | 0.68 | 0.84 |
 
-*Table 2: Selected FwF1 scores from the full few-shot comparison. See REPRODUCE.md for the complete PA / MCA / FwIoU / FwF1 table across all datasets and both 1-shot and 5-shot settings.*
+*Selected FwF1 scores from paper Table III (the full few-shot comparison). See REPRODUCE.md for the complete PA / MCA / FwIoU / FwF1 table across all datasets and both 1-shot and 5-shot settings.*
 
 ### Ablation: SimCLR initialization
 
@@ -195,7 +195,7 @@ Initializing the image encoder with SimCLR representations learned from unlabele
 | 5 | Random | 0.72 / 0.55 | 0.66 / 0.57 | 0.59 / 0.43 | 0.72 / 0.60 |
 | 5 | **SimCLR** | **0.86 / 0.84** | **0.76 / 0.68** | **0.76 / 0.74** | **0.86 / 0.85** |
 
-*Table 3: SimCLR vs. random initialization on Parihaka inline / crossline. SimCLR initialization consistently produces the best scores.*
+*Paper Table IV: SimCLR vs. random initialization on Parihaka inline / crossline. SimCLR initialization consistently produces the best scores.*
 
 ### Qualitative results
 
@@ -204,13 +204,13 @@ Below are example support sets and predictions on the Penobscot dataset. AdaSemS
 <p align="center">
   <img src="docs/figures/Results/Penobscot_Inline.png" alt="Penobscot inline support set and predictions" width="95%"/>
   <br/>
-  <em>Figure 4: Penobscot inline support images, ground truths, and AdaSemSeg predictions.</em>
+  <em>Paper Fig. 18/19 (inline): Penobscot inline support images, ground truths, and AdaSemSeg predictions.</em>
 </p>
 
 <p align="center">
   <img src="docs/figures/Results/Penobscot_Xline.png" alt="Penobscot crossline support set and predictions" width="95%"/>
   <br/>
-  <em>Figure 5: Penobscot crossline support images, ground truths, and AdaSemSeg predictions.</em>
+  <em>Paper Fig. 18/19 (crossline): Penobscot crossline support images, ground truths, and AdaSemSeg predictions.</em>
 </p>
 
 ## Reproducing the paper
@@ -219,13 +219,13 @@ Every table and figure reported in the paper can be reproduced from this reposit
 
 | Paper item | Script / command | Location |
 |---|---|---|
-| Table 1 — K-shot vs. nearest slice | `python scripts/reproduce_table1.py` | `scripts/` |
-| Table 2 — Baselines on target data | `python scripts/reproduce_table2.py` | `scripts/` |
-| Table 3 — ProtoSemSeg & transfer learning | `python scripts/reproduce_table3.py` | `scripts/` |
-| Table 5 — Initialization ablation | `python scripts/reproduce_table5.py` | `scripts/` |
-| Table 6 — Data augmentation ablation | `python scripts/reproduce_table6.py` | `scripts/` |
-| Table 7 — Inference time (GPU / CPU) | `python scripts/reproduce_table7.py` | `scripts/` |
-| Table 8 — Sensitivity to under-represented classes | `python scripts/reproduce_table8.py` | `scripts/` |
+| Table I — K-shot vs. nearest slice | `python scripts/reproduce_table1.py` | `scripts/` |
+| Table II — Baselines on target data | `python scripts/reproduce_table2.py` | `scripts/` |
+| Table III — ProtoSemSeg & transfer learning | `python scripts/reproduce_table3.py` | `scripts/` |
+| Table IV — Initialization ablation | `python scripts/reproduce_table4.py` | `scripts/` |
+| Table V — Data augmentation ablation | `python scripts/reproduce_table5.py` | `scripts/` |
+| Table VI — Inference time (GPU / CPU) | `python scripts/reproduce_table6.py` | `scripts/` |
+| Table VII — Sensitivity to under-represented classes | `python scripts/reproduce_table7.py` | `scripts/` |
 | Prediction figures | `python scripts/reproduce_figures.py` | `scripts/` |
 | Per-scenario evaluation | `python scripts/evaluate_adasemseg.py --scenario <name>` | `scripts/` |
 

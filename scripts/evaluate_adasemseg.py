@@ -67,7 +67,9 @@ def main():
                         default=os.path.join("checkpoints", "simclr", "simclr_resnet50_epoch10.pth.tar"),
                         help="SimCLR backbone checkpoint")
     parser.add_argument("--random_init", action="store_true",
-                        help="Randomly initialize the image encoder (Table 5 ablation)")
+                        help="Randomly initialize the image encoder (Table IV ablation)")
+    parser.add_argument("--img_enc_type", default="resnet", choices=["resnet", "unet"],
+                        help="Image encoder architecture the checkpoint was trained with.")
     parser.add_argument("--shots", type=int, default=None, choices=[1, 5], help="Number of support examples")
     parser.add_argument("--use_nearest_slice", action="store_true", help="Use nearest support slice")
     parser.add_argument("--eval_mode", default="test", choices=["val", "test"], help="Evaluate on val or test split")
@@ -109,6 +111,7 @@ def main():
         "--data_root", args.data_root,
         "--output_dir", args.output_dir,
         "--seed", str(args.seed),
+        "--img_enc_type", args.img_enc_type,
     ]
     if args.use_nearest_slice:
         cmd.append("--use_nearest_slice")

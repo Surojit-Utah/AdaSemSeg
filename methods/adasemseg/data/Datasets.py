@@ -90,10 +90,13 @@ class CustomDataset(Dataset):
             class_index += 1
         print(self.per_class_sample_min_max_indices)
 
-        self.aug_dict = {1: RandomRotate(p=0.5),
+        # Ranges match the paper's Appendix B ("Training the AdaSemSeg"): RandomRotate
+        # [-20, 20] degrees, GaussianBlur sigma [0.1, 2.0] (class default), GaussNoise
+        # variance [1e-4, 5e-2].
+        self.aug_dict = {1: RandomRotate(rot_range=20, p=0.5),
                          2: RandomHorizontalFlip(p=0.5),
                          3: GaussianBlur(p=0.5),
-                         4: GaussNoise(p=0.5)}
+                         4: GaussNoise(var_limit=(1e-4, 5e-2), p=0.5)}
 
         self.total_aug_count = len(self.aug_dict.keys())
 
