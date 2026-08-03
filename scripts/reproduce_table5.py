@@ -44,11 +44,12 @@ def main():
 
     augmentations = ["none", "RandomRotate", "HFlip", "GaussianBlur", "GaussNoise", "all"]
 
-    for aug in augmentations:
-        run_id = 1
-        train_dir = os.path.join(method_dir, "logs", "table5", aug)
-        os.makedirs(train_dir, exist_ok=True)
-
+    # Main.py (methods/adasemseg/) always writes checkpoints under
+    # <cwd>/logs/checkpoints/<shots>-shot/Run_<run_id>/bestmodel.pth.tar -- there's
+    # no way to redirect the output path, so each augmentation variant below
+    # must use a distinct --run_id or later runs would silently overwrite
+    # earlier ones' checkpoints.
+    for run_id, aug in enumerate(augmentations, start=1):
         if not args.skip_training:
             run([
                 sys.executable, "Main.py",
@@ -62,12 +63,12 @@ def main():
                 "--device", args.device,
             ], cwd=method_dir)
 
-        ckpt = os.path.join(train_dir, "checkpoints", "1-shot", f"Run_{run_id}", "bestmodel.pth.tar")
+        ckpt = os.path.join(method_dir, "logs", "checkpoints", "1-shot", f"Run_{run_id}", "bestmodel.pth.tar")
         if not os.path.exists(ckpt):
             print(f"WARNING: checkpoint {ckpt} not found; skipping {aug} evaluation.")
             continue
 
-        out_dir = os.path.join(train_dir, "eval")
+        out_dir = os.path.join(method_dir, "evaluation_results", "table5", aug)
         run([
             sys.executable, "evaluate.py",
             "--checkpoint", ckpt,
@@ -79,7 +80,7 @@ def main():
             "--device", args.device,
         ], cwd=method_dir)
 
-    print("\nTable V reproduction complete. See evaluation outputs under methods/adasemseg/logs/table5/")
+    print("\nTable V reproduction complete. See evaluation outputs under methods/adasemseg/evaluation_results/table5/")
 
 
 if __name__ == "__main__":

@@ -54,6 +54,9 @@ def main():
     parser.add_argument("--run_id", type=int, required=True)
     parser.add_argument("--train_indices", type=str, required=True)
     parser.add_argument("--eval_mode", type=str, default='test', required=True)
+    parser.add_argument("--source_class", type=str, default=None,
+                        help="Class name to evaluate (e.g., f3_facies_data_inline). "
+                             "If omitted, the class is selected interactively.")
     parser.add_argument("-d", "--device", dest="device", help="Device to run on, the cpu or gpu.",
                         type=str, default="cuda:0")
     args = parser.parse_args()
@@ -64,13 +67,16 @@ def main():
     data_info = config['data_info']
 
     # Dataset details
-    datasets = config['classes']
-    print("Select from classes : " + str(datasets))
-    source_class = None
-    while(1):
-        source_class = input("Enter your source_class : ")
-        if source_class in config['data_info'].keys():
-            break
+    source_class = args.source_class
+    if source_class is None:
+        datasets = config['classes']
+        print("Select from classes : " + str(datasets))
+        while(1):
+            source_class = input("Enter your source_class : ")
+            if source_class in config['data_info'].keys():
+                break
+    elif source_class not in config['data_info'].keys():
+        raise ValueError(f"Unknown source_class: {source_class}. Available: {list(config['data_info'].keys())}")
     batch_size = 1
     best_model = args.best_model
     run_id = args.run_id

@@ -254,7 +254,11 @@ def main():
         exp_spec_fptr.close()
 
     if args.test:
-        print("Model under progress....")
+        raise NotImplementedError(
+            "Evaluation is not implemented here. Use "
+            "scripts/evaluate_baseline.py --transfer_learning --train_indices <N> "
+            "to evaluate a fine-tuned transfer-learning checkpoint."
+        )
 
 
 # Run main

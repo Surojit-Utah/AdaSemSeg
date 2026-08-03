@@ -62,14 +62,15 @@ def main():
         },
     ]
 
-    for exp in experiments:
+    # Main.py (methods/adasemseg/) always writes checkpoints under
+    # <cwd>/logs/checkpoints/<shots>-shot/Run_<run_id>/bestmodel.pth.tar -- there's
+    # no way to redirect the output path, so each experiment below must use a
+    # distinct --run_id or later runs would silently overwrite earlier ones'
+    # checkpoints (all three use the same 5-shot count here).
+    for run_id, exp in enumerate(experiments, start=1):
         print(f"\n=== Experiment: {exp['name']} ===")
         print(f"Sources : {exp['sources']}")
         print(f"Targets : {exp['targets']}")
-
-        run_id = 1
-        train_dir = os.path.join(method_dir, "logs", "table1", exp["name"])
-        os.makedirs(train_dir, exist_ok=True)
 
         if not args.skip_training:
             run([
@@ -83,12 +84,13 @@ def main():
                 "--device", args.device,
             ], cwd=method_dir)
 
-        ckpt = os.path.join(train_dir, "checkpoints", f"{exp['shots']}-shot", f"Run_{run_id}", "bestmodel.pth.tar")
+        ckpt = os.path.join(method_dir, "logs", "checkpoints", f"{exp['shots']}-shot",
+                             f"Run_{run_id}", "bestmodel.pth.tar")
         if not os.path.exists(ckpt):
             print(f"WARNING: checkpoint {ckpt} not found; skipping {exp['name']} evaluation.")
             continue
 
-        out_dir = os.path.join(train_dir, "eval")
+        out_dir = os.path.join(method_dir, "evaluation_results", "table1", exp["name"])
         cmd = [
             sys.executable, "evaluate.py",
             "--checkpoint", ckpt,
@@ -102,7 +104,7 @@ def main():
             cmd.append("--use_nearest_slice")
         run(cmd, cwd=method_dir)
 
-    print("\nTable I reproduction complete. See evaluation outputs under methods/adasemseg/logs/table1/")
+    print("\nTable I reproduction complete. See evaluation outputs under methods/adasemseg/evaluation_results/table1/")
 
 
 if __name__ == "__main__":

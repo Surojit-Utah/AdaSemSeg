@@ -186,7 +186,8 @@ def aggregate_metrics(results, class_indices, num_classes):
     """
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'scripts'))
     from metrics import (pixel_accuracy, mean_class_accuracy, frequency_weighted_iou,
-                         frequency_weighted_f1, intersection_over_union, f1_score)
+                         frequency_weighted_f1, intersection_over_union, f1_score,
+                         class_distribution)
 
     per_class = {c: {'pred': [], 'gt': []} for c in class_indices.keys()}
     for r in results:
@@ -206,6 +207,7 @@ def aggregate_metrics(results, class_indices, num_classes):
         fwf1 = frequency_weighted_f1(pred, gt, n_cls)
         iou_per_class = intersection_over_union(pred, gt, n_cls)
         f1_per_class = f1_score(pred, gt, n_cls)
+        dist_per_class = class_distribution(pred, gt, n_cls)
         metrics_by_class[class_name] = {
             'PA': float(pa),
             'MCA': float(mca),
@@ -213,6 +215,8 @@ def aggregate_metrics(results, class_indices, num_classes):
             'FwF1': float(fwf1),
             'IoU_per_class': [float(x) if not np.isnan(x) else None for x in iou_per_class],
             'F1_per_class': [float(x) if not np.isnan(x) else None for x in f1_per_class],
+            # Index 0 = background (excluded from the paper's Table VII class columns).
+            'Class_distribution': [float(x) if not np.isnan(x) else None for x in dist_per_class],
         }
 
     # Average across evaluated classes/datasets

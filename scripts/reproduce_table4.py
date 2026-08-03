@@ -43,13 +43,19 @@ def main():
         "penobscot_facies_data_crossline",
     ]
 
+    # Main.py (methods/adasemseg/) always writes checkpoints under
+    # <cwd>/logs/checkpoints/<shots>-shot/Run_<run_id>/bestmodel.pth.tar -- there's
+    # no way to redirect the output path, so the two variants below must use
+    # different --run_id values or the second training run would silently
+    # overwrite the first's checkpoint.
+    SIMCLR_RUN_ID = 1
+    RANDOM_RUN_ID = 2
+
     # 1) SimCLR initialization
-    simclr_train_dir = os.path.join(method_dir, "logs", "table4", f"simclr_{args.shots}shot")
-    os.makedirs(simclr_train_dir, exist_ok=True)
     if not args.skip_training:
         run([
             sys.executable, "Main.py",
-            "--run_id", "1",
+            "--run_id", str(SIMCLR_RUN_ID),
             "--shots", str(args.shots),
             "--train",
             "--classes",
@@ -57,15 +63,14 @@ def main():
             "--img_enc_checkpoint", simclr_ckpt,
             "--device", args.device,
         ], cwd=method_dir)
-    simclr_ckpt_path = os.path.join(simclr_train_dir, "checkpoints", f"{args.shots}-shot", "Run_1", "bestmodel.pth.tar")
+    simclr_ckpt_path = os.path.join(method_dir, "logs", "checkpoints", f"{args.shots}-shot",
+                                     f"Run_{SIMCLR_RUN_ID}", "bestmodel.pth.tar")
 
     # 2) Random initialization
-    random_train_dir = os.path.join(method_dir, "logs", "table4", f"random_{args.shots}shot")
-    os.makedirs(random_train_dir, exist_ok=True)
     if not args.skip_training:
         run([
             sys.executable, "Main.py",
-            "--run_id", "1",
+            "--run_id", str(RANDOM_RUN_ID),
             "--shots", str(args.shots),
             "--train",
             "--classes",
@@ -73,7 +78,8 @@ def main():
             "--random_init",
             "--device", args.device,
         ], cwd=method_dir)
-    random_ckpt_path = os.path.join(random_train_dir, "checkpoints", f"{args.shots}-shot", "Run_1", "bestmodel.pth.tar")
+    random_ckpt_path = os.path.join(method_dir, "logs", "checkpoints", f"{args.shots}-shot",
+                                     f"Run_{RANDOM_RUN_ID}", "bestmodel.pth.tar")
 
     # 3) Evaluate both on Parihaka (nearest-slice support)
     for name, ckpt, init_flag in [
@@ -83,7 +89,7 @@ def main():
         if not os.path.exists(ckpt):
             print(f"WARNING: checkpoint {ckpt} not found; skipping {name} evaluation.")
             continue
-        out_dir = os.path.join(method_dir, "logs", "table4", f"{name}_{args.shots}shot_eval")
+        out_dir = os.path.join(method_dir, "evaluation_results", "table4", f"{name}_{args.shots}shot")
         cmd = [
             sys.executable, "evaluate.py",
             "--checkpoint", ckpt,
@@ -99,7 +105,7 @@ def main():
             cmd.append("--random_init")
         run(cmd, cwd=method_dir)
 
-    print("\nTable IV reproduction complete. See evaluation outputs under methods/adasemseg/logs/table4/")
+    print("\nTable IV reproduction complete. See evaluation outputs under methods/adasemseg/evaluation_results/table4/")
 
 
 if __name__ == "__main__":

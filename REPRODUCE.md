@@ -111,7 +111,7 @@ python scripts/evaluate_protosemseg.py \
 python scripts/evaluate_baseline.py \
     --checkpoint_dir methods/baselines/logs/checkpoints/Run_1 \
     --eval_mode test \
-    --device cuda:0
+    --source_class f3_facies_data_inline --device cuda:0
 ```
 
 ## 4. Paper tables and figures

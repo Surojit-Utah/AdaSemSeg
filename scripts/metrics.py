@@ -54,6 +54,13 @@ def intersection_over_union(pred, target, num_classes, ignore_index=-1):
     return iou
 
 
+def class_distribution(pred, target, num_classes, ignore_index=-1):
+    """Fraction of ground-truth pixels belonging to each class (index 0 = background)."""
+    cm = _bin_count(pred, target, num_classes, ignore_index)
+    total = cm.sum()
+    return cm.sum(axis=1) / total if total > 0 else np.zeros(num_classes)
+
+
 def frequency_weighted_iou(pred, target, num_classes, ignore_index=-1):
     """Frequency-weighted IoU (FwIoU)."""
     cm = _bin_count(pred, target, num_classes, ignore_index)

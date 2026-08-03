@@ -96,20 +96,45 @@ Alternatively, edit the `classes` list in `methods/adasemseg/config/local_config
 ## Baselines
 
 ### Baseline-1 (AdaSemSeg trained only on target)
+Baseline-1 is *not* a separate architecture -- per the paper it's "the AdaSemSeg
+trained only on the target dataset" (no leave-one-out, no other source datasets).
+There's no dedicated script for it: use `methods/adasemseg/Main.py` itself, with
+`--classes` restricted to the target dataset's own classes instead of a source
+pair. `methods/baselines/Main.py` (below) always builds the Baseline-2
+architecture regardless of flags -- it does not implement Baseline-1.
 ```bash
-cd methods/baselines
-python Main.py --run_id 1 --train --freeze_bn --device cuda:0
+cd methods/adasemseg
+python Main.py --run_id 1 --shots 5 --train --freeze_bn \
+    --classes parihaka_facies_data_inline parihaka_facies_data_crossline \
+    --device cuda:0
 ```
+Evaluate the same way as any AdaSemSeg checkpoint, via `scripts/evaluate_adasemseg.py --checkpoint <CKPT> --classes parihaka_facies_data_inline parihaka_facies_data_crossline`.
 
 ### Baseline-2 (ResNet-UNet)
 ```bash
+cd methods/baselines
 python Main.py --run_id 1 --train --img_enc_type resnet --freeze_bn --device cuda:0
+```
+Evaluate with:
+```bash
+python scripts/evaluate_baseline.py --checkpoint_dir methods/baselines/logs/checkpoints/Run_1 \
+    --source_class f3_facies_data_inline --eval_mode test --device cuda:0
 ```
 
 ### Transfer learning (source pretrain → target fine-tune)
+Two steps: first train Baseline-2 on the source datasets (as above, with
+`--classes` set to the two source datasets), then fine-tune that checkpoint on
+a handful of target slices:
 ```bash
+cd methods/baselines
 python Transfer_learning\Main.py --run_id 1 --train --train_indices 5 \
-    --checkpoint <source_ckpt> --img_enc_type resnet --freeze_bn --device cuda:0
+    --checkpoint <source_baseline2_ckpt> --img_enc_type resnet --freeze_bn --device cuda:0
+```
+Evaluate with:
+```bash
+python scripts/evaluate_baseline.py --transfer_learning --train_indices 5 \
+    --checkpoint_dir methods/baselines/Transfer_learning/logs/checkpoints/Train_slices_5/Run_1 \
+    --source_class parihaka_facies_data_inline --eval_mode test --device cuda:0
 ```
 
 ## ProtoSemSeg

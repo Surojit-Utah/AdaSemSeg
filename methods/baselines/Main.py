@@ -253,7 +253,11 @@ def main():
         exp_spec_fptr.close()
 
     if args.test:
-        print("Model under progress....")
+        raise NotImplementedError(
+            "Evaluation is not implemented here. Use scripts/evaluate_baseline.py "
+            "(wraps methods/baselines/Evaluation/Main.py) to evaluate a trained "
+            "Baseline-2 checkpoint."
+        )
 
 
 # Run main
